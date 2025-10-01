@@ -102,6 +102,7 @@ def main(cfg: DictConfig):
     elif dataset_config["name"] == 'phylo':
         from datasets.phylo_dataset import PhyloGraphDataModule, PhyloDatasetInfos
         from analysis.visualization import NonMolecularVisualization
+        from analysis.phylo_utils import PhyloSamplingMetrics
 
         datamodule = PhyloGraphDataModule(cfg)
 
@@ -116,7 +117,8 @@ def main(cfg: DictConfig):
                                                 domain_features=domain_features)
 
         model_kwargs = {'dataset_infos': dataset_infos, 'train_metrics': train_metrics,
-                        'sampling_metrics': None, 'visualization_tools': visualization_tools,
+                        'sampling_metrics': PhyloSamplingMetrics(datamodule),
+                        'visualization_tools': visualization_tools,
                         'extra_features': extra_features, 'domain_features': domain_features}
 
     elif dataset_config["name"] in ['qm9', 'guacamol', 'moses']:
