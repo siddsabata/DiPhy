@@ -1,0 +1,4 @@
+name: phylo
+datadir: 'data/phylo'
+split_ratios: [0.8, 0.1, 0.1]
+split_seed: 0
