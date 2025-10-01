@@ -23,7 +23,7 @@ model:
     diffusion_steps: 1000
     n_layers: 8
     lambda_train: [5, 0]
-    extra_features: 'all'
+    extra_features: null
 
     # Do not set hidden_mlp_E, dim_ffE too high, computing large tensors on the edges is costly
     # At the moment (03/08), y contains quite little information
