@@ -2,28 +2,19 @@ general:
   name: phylo
   wandb: online
   gpus: 4
-  resume: null
-  test_only: null
   check_val_every_n_epochs: 50
   sample_every_val: 1
-  val_check_interval: null
   samples_to_generate: 100
   samples_to_save: 5
   chains_to_save: 1
   log_every_steps: 50
   number_chain_steps: 50
-  final_model_samples_to_generate: 1000
-  final_model_samples_to_save: 100
-  final_model_chains_to_save: 20
-  evaluate_all_checkpoints: false
+
 model:
-  type: discrete
   transition: uniform
-  model: graph_tf
   diffusion_steps: 1000
   diffusion_noise_schedule: cosine
   n_layers: 8
-  extra_features: null
   hidden_mlp_dims:
     X: 128
     E: 64
@@ -37,8 +28,9 @@ model:
     dim_ffE: 64
     dim_ffy: 256
   lambda_train:
-  - 5
-  - 0
+    - 5
+    - 0
+
 train:
   n_epochs: 500
   batch_size: 8
@@ -51,12 +43,11 @@ train:
   weight_decay: 1.0e-12
   optimizer: adamw
   seed: 0
-  log_memory_summary: false
+
 dataset:
-  name: phylo
-  datadir: data/phylo
+  data_path: data/phylo.pkl
   split_ratios:
-  - 0.8
-  - 0.1
-  - 0.1
+    - 0.8
+    - 0.1
+    - 0.1
   split_seed: 0

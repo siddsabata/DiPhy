@@ -16,22 +16,20 @@ from src.datasets.abstract_dataset import AbstractDataModule, AbstractDatasetInf
 class PhyloGraphDataset(Dataset):
     """Dataset that lazily loads phylogenetic trees from sharded tensors.
 
-    We expect a single raw pickle file ``phylo.pkl`` placed inside ``<root>/raw``.
+    Accepts a direct path to a pickle file containing phylogenetic trees.
     The file must contain a Python list of dictionaries with the keys
     ``tree_id``, ``X``, ``E`` and ``L``. During processing we shuffle the
     complete list once, persist deterministic indices for the train / val / test
-    splits, and write compact shards of ``64`` graphs each to ``<root>/processed``.
+    splits, and write compact shards of ``64`` graphs each to a cache directory.
     """
 
     SHARD_SIZE: int = 64
 
     def __init__(
         self,
-        root: str,
+        data_path: str,
         split: str,
         transform=None,
-        pre_transform=None,
-        pre_filter=None,
         *,
         split_ratios: Sequence[float] = (0.8, 0.1, 0.1),
         split_seed: int = 0,
@@ -41,24 +39,44 @@ class PhyloGraphDataset(Dataset):
         self.split = split
         self.split_ratios = tuple(split_ratios)
         self.split_seed = int(split_seed)
-        if pre_filter is not None or pre_transform is not None:
-            raise ValueError(
-                "PhyloGraphDataset shards do not currently support pre_filter or pre_transform."
-            )
+
+        # Store direct path to the raw pickle file
+        self._data_path = pathlib.Path(data_path).resolve()
+        if not self._data_path.exists():
+            raise FileNotFoundError(f"Dataset file not found: {self._data_path}")
+
+        # Create cache directory next to the data file
+        self._cache_dir = self._data_path.parent / ".processed"
 
         self.num_node_types = 3  # 0 = root, 1 = clone, 2 = mutation
         self.num_edge_types = 3  # 0 = no edge, 1 = clone edge, 2 = mutation edge
         self.shard_size = max(1, int(shard_size))
         self.max_cached_shards = max(1, int(max_cached_shards))
-        self._cache: "OrderedDict[str, List[Dict[str, Any]]]" = OrderedDict()
-        super().__init__(root, transform, pre_transform, pre_filter)
+        self._shard_cache: "OrderedDict[str, List[Dict[str, Any]]]" = OrderedDict()
+
+        # Initialize without calling parent's __init__ since we manage paths ourselves
+        self.transform = transform
+        self.pre_transform = None
+        self.pre_filter = None
+
+        # Ensure cache directory exists
+        self._cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Process data if needed and load index
+        self._ensure_processed()
         self._load_index()
 
     @property
+    def raw_paths(self) -> List[str]:
+        return [str(self._data_path)]
+
+    @property
+    def processed_dir(self) -> str:
+        return str(self._cache_dir)
+
+    @property
     def raw_file_names(self) -> List[str]:
-        # A single pickle file contains the complete dataset; all splits read
-        # from it and slice their portion using cached indices.
-        return ["phylo.pkl"]
+        return [self._data_path.name]
 
     @property
     def processed_file_names(self) -> List[str]:
@@ -67,15 +85,15 @@ class PhyloGraphDataset(Dataset):
         # runtime, so we only declare the index here for the Dataset API.
         return [f"{self.split}_index.json"]
 
-    def download(self) -> None:
-        # The user is responsible for placing the pickle files locally, so we
-        # only provide a friendly error if the expected file is missing.
-        expected = self.raw_paths[0]
-        if not os.path.exists(expected):
-            raise FileNotFoundError(
-                f"Expected raw pickle for split '{self.split}' at '{expected}'."
-                " Please place the file manually before instantiating the dataset."
-            )
+    @property
+    def processed_paths(self) -> List[str]:
+        return [os.path.join(self.processed_dir, f) for f in self.processed_file_names]
+
+    def _ensure_processed(self) -> None:
+        """Check if processed data exists, otherwise trigger processing."""
+        index_path = self.processed_paths[0]
+        if not os.path.exists(index_path):
+            self.process()
 
     def process(self) -> None:
         # Load the batch of phylogenetic trees for the requested split.
@@ -193,13 +211,8 @@ class PhyloGraphDataset(Dataset):
         return plan
 
     def _load_index(self) -> None:
-        """Read the cached shard index or trigger processing if missing."""
-
+        """Read the cached shard index."""
         index_path = self.processed_paths[0]
-        if not os.path.exists(index_path):
-            # Trigger processing so the shards and index are created.
-            self.process()
-
         with open(index_path, "r", encoding="utf-8") as handle:
             payload = json.load(handle)
 
@@ -251,18 +264,18 @@ class PhyloGraphDataset(Dataset):
         """Load a shard from disk, keeping a tiny LRU cache in memory."""
 
         cache_key = f"shard_{shard_id}"
-        if cache_key in self._cache:
-            shard = self._cache.pop(cache_key)
+        if cache_key in self._shard_cache:
+            shard = self._shard_cache.pop(cache_key)
             # Move to end so LRU ordering is preserved.
-            self._cache[cache_key] = shard
+            self._shard_cache[cache_key] = shard
             return shard
 
         shard_path = self._shard_paths[shard_id]
         shard: List[Dict[str, Any]] = torch.load(shard_path, map_location="cpu")
-        self._cache[cache_key] = shard
+        self._shard_cache[cache_key] = shard
 
-        if len(self._cache) > self.max_cached_shards:
-            self._cache.popitem(last=False)
+        if len(self._shard_cache) > self.max_cached_shards:
+            self._shard_cache.popitem(last=False)
         return shard
 
     def _materialise_data(self, sample: Dict[str, torch.Tensor]) -> Data:
@@ -297,9 +310,9 @@ class PhyloGraphDataModule(AbstractDataModule):
 
     def __init__(self, cfg, n_graphs: Optional[int] = None) -> None:
         self.cfg = cfg
-        self.datadir = cfg.dataset.datadir
-        base_path = pathlib.Path(os.path.realpath(__file__)).parents[2]
-        root_path = os.path.join(base_path, self.datadir)
+
+        # Get direct path to the pickle file
+        data_path = cfg.dataset.data_path
 
         split_ratios = getattr(self.cfg.dataset, "split_ratios", (0.8, 0.1, 0.1))
         split_seed = getattr(self.cfg.dataset, "split_seed", 0)
@@ -311,7 +324,7 @@ class PhyloGraphDataModule(AbstractDataModule):
         # tensors are fetched on demand when the dataloaders request them.
         datasets = {
             split: PhyloGraphDataset(
-                root=root_path,
+                data_path=data_path,
                 split=split,
                 split_ratios=split_ratios,
                 split_seed=split_seed,
