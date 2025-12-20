@@ -2,174 +2,129 @@ schema_version: 2
 
 experiment:
   run_id: "sistem_regimes_smoke"
-  description: "Small-scale smoke test for regime pipeline"
   output_root: "output/sistem_regimes_smoke"
-
   attempts_per_tumor: 3
   keep_policy: "first_success"
-
   rng:
     global_seed: 20251219
-    per_run_seed: "hash(run_id, regime_id, tumor_index, attempt_index)"
-
-  splits:
-    strategy: "stratified_by_regime"
-    train: 0.80
-    val: 0.10
-    test: 0.10
 
 sampler:
-  method: "latin_hypercube"
-
-  log10_parameters:
-    - epsilon
-    - focal_driver_rate
-    - focal_pass_rate
-    - SNV_driver_rate
-    - SNV_pass_rate
-    - arm_rate
-    - chromosomal_rate
-    - WGD_rate
-
   deduplication:
     enabled: false
-
   constraints:
     - name: "detectable_lt_capacity"
       expr: "min_detectable < min(capacities)"
 
 defaults:
   sistem_parameters:
-    t_max: 1500
+    t_max: 6000
     lifespan_mean: 1
-    N0: 20
-
+    N0: 10
     max_distinct_driv_ratio: 0.8
     max_region_CN: 10
     max_region_SNV: 10
     max_ploidy: 8
     min_ploidy: 1.5
-
     length_mean: 1.5
     mag_mean: 1.2
     focal_gain_rate: 0.5
-
     ncells_normal: 1
-    ncells_prim: 2000
-    ncells_meta: 800
-    min_mut_fraction: 0.02
-
-    coverage: 30
+    ncells_prim: 8000
+    ncells_meta: 4000
+    min_mut_fraction: 0.05
+    coverage: 100
     read_len: 150
     lorenz_y: 0.5
 
-  outputs:
-    lineage_level: "clonal"
-    write_full_trees: false
-    write_readcounts_bulk: false
-    write_readcounts_singlecell: false
-
-    keep_files:
-      - sim.log
-      - clone_tree.nwk
-      - migration_graph.tsv
-      - observed_CNPs.tsv
-      - SNV_profiles.tsv
-      - CNA_events.tsv
-      - SNV_events.tsv
-
-  filters:
-    min_clone_tree_nodes: 3
-    max_clone_tree_nodes: 500
-    require_metastasis_if_multisite: false
-
 regimes:
-  - id: "smoke_simple"
+  - id: "R01_single_site_arm_neutral"
     n_tumors: 1
-    description: "Single-site SimpleAnatomy with RandomArmLibrary."
     sistem:
       selection_library: {class: "RandomArmLibrary", init: {from_params: true}}
       anatomy: {class: "SimpleAnatomy"}
     parameters:
       nsites: {dist: fixed, value: 1}
-      capacities: {dist: log_uniform_int, min: 200000, max: 800000}
+      capacities: {dist: log_uniform_int, min: 2000000, max: 50000000}
       min_detectable:
         dist: fraction_of
         of: capacities
-        fraction: {dist: uniform, min: 0.01, max: 0.10}
-      growth_rate: {dist: uniform, min: 0.002, max: 0.006}
-      epsilon: {dist: fixed, value: 1e-10}
-      focal_driver_rate: {dist: log_uniform, min: 1e-6, max: 1e-5}
-      focal_pass_rate: {dist: log_uniform, min: 1e-3, max: 1e-2}
-      arm_rate: {dist: log_uniform, min: 1e-7, max: 1e-6}
-      chromosomal_rate: {dist: log_uniform, min: 1e-8, max: 1e-7}
-      WGD_rate: {dist: log_uniform, min: 1e-10, max: 1e-9}
+        fraction: {dist: uniform, min: 0.05, max: 0.30}
+      growth_rate: {dist: uniform, min: 0.002, max: 0.010}
+      epsilon: {dist: fixed, value: 1e-12}
+      focal_driver_rate: {dist: log_uniform, min: 1e-6, max: 3e-5}
+      focal_pass_rate: {dist: log_uniform, min: 1e-3, max: 3e-2}
+      arm_rate: {dist: log_uniform, min: 1e-7, max: 1e-5}
+      chromosomal_rate: {dist: log_uniform, min: 1e-8, max: 1e-6}
+      WGD_rate: {dist: log_uniform, min: 1e-10, max: 1e-8}
       SNV_driver_rate: {dist: fixed, value: 0.0}
-      SNV_pass_rate: {dist: log_uniform, min: 1e-3, max: 1e-2}
-      CN_coeff: {dist: uniform, min: 0.05, max: 0.10}
+      SNV_pass_rate: {dist: log_uniform, min: 1e-3, max: 3e-2}
+      CN_coeff: {dist: uniform, min: 0.02, max: 0.10}
+      ncells_prim: {dist: int_range, min: 2000, max: 15000}
+      min_mut_fraction: {dist: log_uniform, min: 0.01, max: 0.10}
 
-  - id: "smoke_static"
+  - id: "R06_3site_static_low_migration_shared_landscape"
     n_tumors: 1
-    description: "StaticAnatomy with random distances and distance-based metastatic libraries."
     sistem:
       selection_library: {class: "RandomArmLibrary", init: {from_params: true}}
       anatomy:
         class: "StaticAnatomy"
-        distances: {method: "random"}
-        metastatic_libraries:
-          enabled: true
-          method: "distance"
-          from_params: true
-    parameters:
-      nsites: {dist: fixed, value: 3}
-      capacities:
-        dist: per_site_from_base
-        base: {dist: log_uniform_int, min: 200000, max: 800000}
-        multiplier: {dist: log_uniform, min: 0.8, max: 1.2}
-      min_detectable:
-        dist: fraction_of
-        of: capacities
-        fraction: {dist: uniform, min: 0.01, max: 0.10}
-      growth_rate: {dist: uniform, min: 0.002, max: 0.006}
-      max_growth_rate_multiplier: {dist: uniform, min: 1.0, max: 2.0}
-      epsilon: {dist: log_uniform, min: 1e-9, max: 1e-8}
-      alter_prop: {dist: uniform, min: 0.1, max: 0.3}
-      focal_driver_rate: {dist: log_uniform, min: 1e-6, max: 1e-5}
-      focal_pass_rate: {dist: log_uniform, min: 1e-3, max: 1e-2}
-      arm_rate: {dist: log_uniform, min: 1e-7, max: 1e-6}
-      chromosomal_rate: {dist: log_uniform, min: 1e-8, max: 1e-7}
-      WGD_rate: {dist: log_uniform, min: 1e-10, max: 1e-9}
-      SNV_driver_rate: {dist: fixed, value: 0.0}
-      SNV_pass_rate: {dist: log_uniform, min: 1e-3, max: 1e-2}
-      CN_coeff: {dist: uniform, min: 0.05, max: 0.10}
-
-  - id: "smoke_genotype"
-    n_tumors: 1
-    description: "GenotypeAnatomy with random distances."
-    sistem:
-      selection_library: {class: "RandomArmLibrary", init: {from_params: true}}
-      anatomy:
-        class: "GenotypeAnatomy"
         distances: {method: "random"}
         metastatic_libraries: {enabled: false}
     parameters:
       nsites: {dist: fixed, value: 3}
       capacities:
         dist: per_site_from_base
-        base: {dist: log_uniform_int, min: 200000, max: 800000}
-        multiplier: {dist: log_uniform, min: 0.8, max: 1.2}
+        base: {dist: log_uniform_int, min: 5000000, max: 50000000}
+        multiplier: {dist: log_uniform, min: 0.5, max: 2.0}
       min_detectable:
         dist: fraction_of
         of: capacities
-        fraction: {dist: uniform, min: 0.01, max: 0.10}
-      growth_rate: {dist: uniform, min: 0.002, max: 0.006}
-      max_growth_rate_multiplier: {dist: uniform, min: 1.0, max: 2.0}
-      epsilon: {dist: log_uniform, min: 1e-9, max: 1e-8}
-      focal_driver_rate: {dist: log_uniform, min: 1e-6, max: 1e-5}
-      focal_pass_rate: {dist: log_uniform, min: 1e-3, max: 1e-2}
-      arm_rate: {dist: log_uniform, min: 1e-7, max: 1e-6}
-      chromosomal_rate: {dist: log_uniform, min: 1e-8, max: 1e-7}
-      WGD_rate: {dist: log_uniform, min: 1e-10, max: 1e-9}
+        fraction: {dist: uniform, min: 0.05, max: 0.30}
+      growth_rate: {dist: uniform, min: 0.002, max: 0.010}
+      max_growth_rate_multiplier: {dist: uniform, min: 1.0, max: 4.0}
+      epsilon: {dist: log_uniform, min: 1e-10, max: 1e-8}
+      focal_driver_rate: {dist: log_uniform, min: 1e-5, max: 5e-4}
+      focal_pass_rate: {dist: log_uniform, min: 1e-3, max: 3e-2}
+      arm_rate: {dist: log_uniform, min: 1e-7, max: 1e-5}
+      chromosomal_rate: {dist: log_uniform, min: 1e-8, max: 1e-6}
+      WGD_rate: {dist: log_uniform, min: 1e-10, max: 1e-8}
       SNV_driver_rate: {dist: fixed, value: 0.0}
-      SNV_pass_rate: {dist: log_uniform, min: 1e-3, max: 1e-2}
-      CN_coeff: {dist: uniform, min: 0.05, max: 0.10}
+      SNV_pass_rate: {dist: log_uniform, min: 1e-3, max: 3e-2}
+      CN_coeff: {dist: uniform, min: 0.05, max: 0.25}
+      ncells_prim: {dist: int_range, min: 5000, max: 20000}
+      ncells_meta: {dist: int_range, min: 2000, max: 15000}
+      min_mut_fraction: {dist: log_uniform, min: 0.01, max: 0.10}
+
+  - id: "R10_5site_genotype_migration_organotropism"
+    n_tumors: 1
+    sistem:
+      selection_library: {class: "RandomArmLibrary", init: {from_params: true}}
+      anatomy:
+        class: "GenotypeAnatomy"
+        distances: {method: "random"}
+        metastatic_libraries: {enabled: true, method: "distance", from_params: true}
+    parameters:
+      nsites: {dist: fixed, value: 5}
+      capacities:
+        dist: per_site_from_base
+        base: {dist: log_uniform_int, min: 3000000, max: 30000000}
+        multiplier: {dist: log_uniform, min: 0.5, max: 2.0}
+      min_detectable:
+        dist: fraction_of
+        of: capacities
+        fraction: {dist: uniform, min: 0.08, max: 0.40}
+      growth_rate: {dist: uniform, min: 0.003, max: 0.012}
+      max_growth_rate_multiplier: {dist: uniform, min: 3.0, max: 12.0}
+      epsilon: {dist: log_uniform, min: 1e-9, max: 1e-6}
+      alter_prop: {dist: uniform, min: 0.10, max: 0.50}
+      focal_driver_rate: {dist: log_uniform, min: 1e-5, max: 5e-4}
+      focal_pass_rate: {dist: log_uniform, min: 1e-3, max: 3e-2}
+      arm_rate: {dist: log_uniform, min: 1e-7, max: 1e-5}
+      chromosomal_rate: {dist: log_uniform, min: 1e-8, max: 1e-6}
+      WGD_rate: {dist: log_uniform, min: 1e-10, max: 1e-8}
+      SNV_driver_rate: {dist: fixed, value: 0.0}
+      SNV_pass_rate: {dist: log_uniform, min: 1e-3, max: 3e-2}
+      CN_coeff: {dist: uniform, min: 0.05, max: 0.25}
+      ncells_prim: {dist: int_range, min: 3000, max: 12000}
+      ncells_meta: {dist: int_range, min: 2000, max: 8000}
+      min_mut_fraction: {dist: log_uniform, min: 0.01, max: 0.10}
