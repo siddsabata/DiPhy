@@ -13,7 +13,8 @@
 set -euo pipefail
 
 JOBS_PATH=${JOBS_PATH:-"$PWD/datagen/output/sistem_regimes_v1/jobs.jsonl"}
-TASK_ID=${SLURM_ARRAY_TASK_ID}
+OFFSET=${OFFSET:-0}
+TASK_ID=$((SLURM_ARRAY_TASK_ID + OFFSET))
 
 module load anaconda3
 

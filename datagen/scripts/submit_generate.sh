@@ -41,13 +41,14 @@ if [ "$CHUNK_SIZE" -gt 0 ]; then
     if [ "$END" -ge "$JOB_COUNT" ]; then
       END=$((JOB_COUNT - 1))
     fi
-    sbatch --array=${START}-${END}%${MAX_CONCURRENT} \
-      --export=JOBS_PATH="$JOBS_PATH" \
+    COUNT=$((END - START + 1))
+    sbatch --array=0-$((COUNT - 1))%${MAX_CONCURRENT} \
+      --export=JOBS_PATH="$JOBS_PATH",OFFSET="$START" \
       datagen/scripts/submit_generate.slurm
     START=$((END + 1))
   done
 else
   sbatch --array=0-$((JOB_COUNT - 1))%${MAX_CONCURRENT} \
-    --export=JOBS_PATH="$JOBS_PATH" \
+    --export=JOBS_PATH="$JOBS_PATH",OFFSET=0 \
     datagen/scripts/submit_generate.slurm
 fi
