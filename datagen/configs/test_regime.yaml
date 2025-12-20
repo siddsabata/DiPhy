@@ -40,10 +40,6 @@ sampler:
 
 defaults:
   sistem_parameters:
-    num_chrom: 22
-    region_len: 5000000
-    bin_size: null
-
     t_max: 800
     lifespan_mean: 1
     N0: 5

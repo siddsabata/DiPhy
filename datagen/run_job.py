@@ -21,6 +21,8 @@ except ImportError:  # pragma: no cover - fall back to explicit modules for olde
 from sistem import anatomy as anatomy_module
 from sistem import selection as selection_module
 
+import inspect
+
 ROOT = Path(__file__).resolve().parent
 
 REQUIRED_FILES = ("gs.pkl", "SNV_events.tsv", "clone_tree.nwk")
@@ -50,6 +52,14 @@ def read_job_line(path: Path, index: int) -> Dict[str, Any]:
 def ensure_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
+
+
+def filter_sistem_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    signature = inspect.signature(Parameters)
+    if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in signature.parameters.values()):
+        return params
+    allowed = {name for name in signature.parameters if name != "self"}
+    return {key: value for key, value in params.items() if key in allowed}
 
 
 def load_selection_library(params: Parameters, spec: Dict[str, Any]):
@@ -139,7 +149,8 @@ def main() -> None:
         ensure_seed(seed)
 
         try:
-            params = Parameters(out_dir=str(attempt_dir), **job["sistem_parameters"])
+            sistem_params = filter_sistem_params(job["sistem_parameters"])
+            params = Parameters(out_dir=str(attempt_dir), **sistem_params)
             library = load_selection_library(params, job["selection_library"])
             anatomy = load_anatomy(library, params, job["anatomy"])
 
