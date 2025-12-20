@@ -27,7 +27,7 @@ mkdir -p logs
 
 CHUNK_SIZE=${CHUNK_SIZE:-1000}
 MAX_CONCURRENT=${MAX_CONCURRENT:-200}
-MAX_BATCHES=${MAX_BATCHES:-0}
+MAX_BATCHES=${MAX_BATCHES:-4}
 
 if [ "$CHUNK_SIZE" -gt 0 ]; then
   if [ -f "$STATE_PATH" ]; then
