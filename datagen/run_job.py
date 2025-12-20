@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import random
+import traceback
 from pathlib import Path
 from typing import Any, Dict
 
@@ -110,8 +111,12 @@ def load_anatomy(library, params: Parameters, spec: Dict[str, Any]):
     return anatomy
 
 
+def missing_outputs(attempt_dir: Path) -> list[str]:
+    return [name for name in REQUIRED_FILES if not (attempt_dir / name).exists()]
+
+
 def is_success(attempt_dir: Path) -> bool:
-    return all((attempt_dir / name).exists() for name in REQUIRED_FILES)
+    return not missing_outputs(attempt_dir)
 
 
 def main() -> None:
@@ -150,6 +155,7 @@ def main() -> None:
 
         try:
             sistem_params = filter_sistem_params(job["sistem_parameters"])
+            dropped = sorted(set(job["sistem_parameters"]) - set(sistem_params))
             params = Parameters(out_dir=str(attempt_dir), **sistem_params)
             library = load_selection_library(params, job["selection_library"])
             anatomy = load_anatomy(library, params, job["anatomy"])
@@ -164,10 +170,14 @@ def main() -> None:
             # Keep retrying within the same array task.
             failure_log = tumor_dir / "failures.log"
             with failure_log.open("a", encoding="utf-8") as handle:
+                if "dropped" in locals() and dropped:
+                    handle.write(f"attempt={attempt_index} seed={seed} dropped={','.join(dropped)}\n")
                 handle.write(f"attempt={attempt_index} seed={seed} error={exc}\n")
+                handle.write(traceback.format_exc())
             continue
 
-        if is_success(attempt_dir):
+        missing = missing_outputs(attempt_dir)
+        if not missing:
             success_payload = {
                 "run_id": job["run_id"],
                 "regime_id": regime_id,
@@ -179,6 +189,12 @@ def main() -> None:
             success_path.write_text(json.dumps(success_payload, indent=2) + "\n")
             if keep_policy == "first_success":
                 break
+        else:
+            failure_log = tumor_dir / "failures.log"
+            with failure_log.open("a", encoding="utf-8") as handle:
+                handle.write(
+                    f"attempt={attempt_index} seed={seed} missing={','.join(missing)}\n"
+                )
 
 
 if __name__ == "__main__":
