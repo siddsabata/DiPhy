@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=6GB
+#SBATCH --mem=2GB
 #SBATCH -A bio230007p
 
 set -euo pipefail
