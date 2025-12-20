@@ -24,8 +24,30 @@ print(sum(1 for _ in path.open("r", encoding="utf-8")))
 PY
 )
 
+if [ "$JOB_COUNT" -le 0 ]; then
+  echo "No jobs found in $JOBS_PATH" >&2
+  exit 1
+fi
+
 mkdir -p logs
 
-sbatch --array=0-$((JOB_COUNT - 1))%200 \
-  --export=JOBS_PATH="$JOBS_PATH" \
-  datagen/scripts/submit_generate.slurm
+CHUNK_SIZE=${CHUNK_SIZE:-1000}
+MAX_CONCURRENT=${MAX_CONCURRENT:-200}
+
+if [ "$CHUNK_SIZE" -gt 0 ]; then
+  START=0
+  while [ "$START" -lt "$JOB_COUNT" ]; do
+    END=$((START + CHUNK_SIZE - 1))
+    if [ "$END" -ge "$JOB_COUNT" ]; then
+      END=$((JOB_COUNT - 1))
+    fi
+    sbatch --array=${START}-${END}%${MAX_CONCURRENT} \
+      --export=JOBS_PATH="$JOBS_PATH" \
+      datagen/scripts/submit_generate.slurm
+    START=$((END + 1))
+  done
+else
+  sbatch --array=0-$((JOB_COUNT - 1))%${MAX_CONCURRENT} \
+    --export=JOBS_PATH="$JOBS_PATH" \
+    datagen/scripts/submit_generate.slurm
+fi
