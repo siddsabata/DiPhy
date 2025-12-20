@@ -5,7 +5,7 @@ experiment:
   description: "Small-scale smoke test for regime pipeline"
   output_root: "output/sistem_regimes_smoke"
 
-  attempts_per_tumor: 1
+  attempts_per_tumor: 3
   keep_policy: "first_success"
 
   rng:
@@ -40,9 +40,9 @@ sampler:
 
 defaults:
   sistem_parameters:
-    t_max: 800
+    t_max: 1500
     lifespan_mean: 1
-    N0: 5
+    N0: 20
 
     max_distinct_driv_ratio: 0.8
     max_region_CN: 10
@@ -55,9 +55,9 @@ defaults:
     focal_gain_rate: 0.5
 
     ncells_normal: 1
-    ncells_prim: 500
-    ncells_meta: 200
-    min_mut_fraction: 0.1
+    ncells_prim: 2000
+    ncells_meta: 800
+    min_mut_fraction: 0.02
 
     coverage: 30
     read_len: 150
@@ -96,7 +96,7 @@ regimes:
       min_detectable:
         dist: fraction_of
         of: capacities
-        fraction: {dist: uniform, min: 0.05, max: 0.20}
+        fraction: {dist: uniform, min: 0.01, max: 0.10}
       growth_rate: {dist: uniform, min: 0.002, max: 0.006}
       epsilon: {dist: fixed, value: 1e-10}
       focal_driver_rate: {dist: log_uniform, min: 1e-6, max: 1e-5}
@@ -129,7 +129,7 @@ regimes:
       min_detectable:
         dist: fraction_of
         of: capacities
-        fraction: {dist: uniform, min: 0.05, max: 0.20}
+        fraction: {dist: uniform, min: 0.01, max: 0.10}
       growth_rate: {dist: uniform, min: 0.002, max: 0.006}
       max_growth_rate_multiplier: {dist: uniform, min: 1.0, max: 2.0}
       epsilon: {dist: log_uniform, min: 1e-9, max: 1e-8}
@@ -161,7 +161,7 @@ regimes:
       min_detectable:
         dist: fraction_of
         of: capacities
-        fraction: {dist: uniform, min: 0.05, max: 0.20}
+        fraction: {dist: uniform, min: 0.01, max: 0.10}
       growth_rate: {dist: uniform, min: 0.002, max: 0.006}
       max_growth_rate_multiplier: {dist: uniform, min: 1.0, max: 2.0}
       epsilon: {dist: log_uniform, min: 1e-9, max: 1e-8}
