@@ -59,6 +59,8 @@ def lhs_samples(rng: np.random.Generator, count: int, dims: int) -> np.ndarray:
 def eval_constraint(expr: str, values: Dict[str, Any]) -> bool:
     safe_globals = {"__builtins__": {}, "min": min, "max": max, "math": math}
     try:
+        if "capacities" in values and not isinstance(values["capacities"], list):
+            values = {**values, "capacities": [values["capacities"]]}
         return bool(eval(expr, safe_globals, values))
     except NameError:
         return True
