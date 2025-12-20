@@ -89,23 +89,33 @@ def sample_distribution(
     lhs_value: float | None = None,
 ) -> Any:
     dist = spec["dist"]
+    def as_float(value: Any) -> float:
+        return float(value) if isinstance(value, str) else float(value)
+
+    def as_int(value: Any) -> int:
+        return int(float(value)) if isinstance(value, str) else int(value)
+
     if dist == "fixed":
         return spec["value"]
     if dist == "uniform":
         u = lhs_value if lhs_value is not None else rng.random()
-        return spec["min"] + (spec["max"] - spec["min"]) * u
+        min_val = as_float(spec["min"])
+        max_val = as_float(spec["max"])
+        return min_val + (max_val - min_val) * u
     if dist == "log_uniform":
         u = lhs_value if lhs_value is not None else rng.random()
-        lo = math.log10(spec["min"])
-        hi = math.log10(spec["max"])
+        lo = math.log10(as_float(spec["min"]))
+        hi = math.log10(as_float(spec["max"]))
         return 10 ** (lo + (hi - lo) * u)
     if dist == "log_uniform_int":
         u = lhs_value if lhs_value is not None else rng.random()
-        lo = math.log10(spec["min"])
-        hi = math.log10(spec["max"])
+        lo = math.log10(as_float(spec["min"]))
+        hi = math.log10(as_float(spec["max"]))
         return int(round(10 ** (lo + (hi - lo) * u)))
     if dist == "int_range":
-        return int(rng.integers(spec["min"], spec["max"] + 1))
+        min_val = as_int(spec["min"])
+        max_val = as_int(spec["max"])
+        return int(rng.integers(min_val, max_val + 1))
     if dist == "choice":
         return rng.choice(spec["values"]).item()
     raise ValueError(f"Unsupported dist: {dist}")
