@@ -15,7 +15,11 @@ import argparse
 import json
 from pathlib import Path
 
-from sistem import Parameters, load_gs
+try:
+    from sistem import Parameters, load_gs
+except ImportError:  # pragma: no cover
+    from sistem.parameters import Parameters
+    from sistem.growth_sim import load_gs
 
 
 def main():
@@ -74,4 +78,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

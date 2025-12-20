@@ -12,7 +12,12 @@ from typing import Any, Dict
 
 import numpy as np
 
-from sistem import GrowthSimulator, Parameters
+try:
+    from sistem import GrowthSimulator, Parameters
+except ImportError:  # pragma: no cover - fall back to explicit modules for older layouts
+    from sistem.growth_sim import GrowthSimulator
+    from sistem.parameters import Parameters
+
 from sistem import anatomy as anatomy_module
 from sistem import selection as selection_module
 

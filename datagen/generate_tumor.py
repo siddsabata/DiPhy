@@ -12,7 +12,11 @@ import argparse
 import json
 from pathlib import Path
 
-from sistem import GrowthSimulator, Parameters
+try:
+    from sistem import GrowthSimulator, Parameters
+except ImportError:  # pragma: no cover
+    from sistem.growth_sim import GrowthSimulator
+    from sistem.parameters import Parameters
 from sistem.anatomy import SimpleAnatomy
 from sistem.selection import RandomRegionLibrary
 
@@ -69,4 +73,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

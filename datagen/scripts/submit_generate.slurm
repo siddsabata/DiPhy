@@ -17,6 +17,19 @@ TASK_ID=${SLURM_ARRAY_TASK_ID}
 
 module load anaconda3
 
+source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate /ocean/projects/cis250063p/ssabata/DiPhy/datagen/sistem
+
+python - <<'PY'
+import sys
+try:
+    import sistem
+    from sistem import GrowthSimulator
+except Exception as exc:
+    print("SISTEM import failed:", exc, file=sys.stderr)
+    raise
+print("Using python:", sys.executable)
+print("SISTEM module:", sistem.__file__)
+PY
 
 python datagen/run_job.py --jobs "$JOBS_PATH" --task-id "$TASK_ID"
