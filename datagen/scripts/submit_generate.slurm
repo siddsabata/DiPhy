@@ -15,4 +15,8 @@ set -euo pipefail
 JOBS_PATH=${JOBS_PATH:-"$PWD/datagen/output/sistem_regimes_v1/jobs.jsonl"}
 TASK_ID=${SLURM_ARRAY_TASK_ID}
 
+module load anaconda3
+
+conda activate /ocean/projects/cis250063p/ssabata/DiPhy/datagen/sistem
+
 python datagen/run_job.py --jobs "$JOBS_PATH" --task-id "$TASK_ID"
