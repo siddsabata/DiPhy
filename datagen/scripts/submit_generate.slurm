@@ -6,8 +6,8 @@
 #SBATCH --partition=RM-shared
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=2GB
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=3GB
 #SBATCH -A bio230007p
 
 set -euo pipefail
