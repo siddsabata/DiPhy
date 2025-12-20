@@ -5,24 +5,18 @@ CONFIG_PATH=${1:-"datagen/configs/regimes.yaml"}
 python datagen/build_jobs.py --config "$CONFIG_PATH"
 
 OUTPUT_ROOT=$(python - <<PY
-import json
 from pathlib import Path
 import yaml
 
 config_path = Path("$CONFIG_PATH")
 config = yaml.safe_load(config_path.read_text())
-output_root = config["experiment"]["output_root"]
-print(output_root)
+print(config["experiment"]["output_root"])
 PY
 )
 
 JOBS_PATH="datagen/${OUTPUT_ROOT}/jobs.jsonl"
-JOB_COUNT=$(python - <<PY
-from pathlib import Path
-path = Path("$JOBS_PATH")
-print(sum(1 for _ in path.open("r", encoding="utf-8")))
-PY
-)
+STATE_PATH="datagen/${OUTPUT_ROOT}/submit_state.json"
+JOB_COUNT=$(wc -l < "$JOBS_PATH" | tr -d ' ')
 
 if [ "$JOB_COUNT" -le 0 ]; then
   echo "No jobs found in $JOBS_PATH" >&2
@@ -33,9 +27,19 @@ mkdir -p logs
 
 CHUNK_SIZE=${CHUNK_SIZE:-1000}
 MAX_CONCURRENT=${MAX_CONCURRENT:-200}
+MAX_BATCHES=${MAX_BATCHES:-0}
 
 if [ "$CHUNK_SIZE" -gt 0 ]; then
-  START=0
+  if [ -f "$STATE_PATH" ]; then
+    START=$(cat "$STATE_PATH" | tr -d ' ')
+  else
+    START=0
+  fi
+  if [ "$START" -ge "$JOB_COUNT" ]; then
+    echo "All jobs already submitted (next_offset=$START)" >&2
+    exit 0
+  fi
+  BATCHES=0
   while [ "$START" -lt "$JOB_COUNT" ]; do
     END=$((START + CHUNK_SIZE - 1))
     if [ "$END" -ge "$JOB_COUNT" ]; then
@@ -46,6 +50,14 @@ if [ "$CHUNK_SIZE" -gt 0 ]; then
       --export=JOBS_PATH="$JOBS_PATH",OFFSET="$START" \
       datagen/scripts/submit_generate.slurm
     START=$((END + 1))
+    mkdir -p "$(dirname "$STATE_PATH")"
+    printf "%s\n" "$START" > "$STATE_PATH"
+    if [ "$MAX_BATCHES" -gt 0 ]; then
+      BATCHES=$((BATCHES + 1))
+      if [ "$BATCHES" -ge "$MAX_BATCHES" ]; then
+        break
+      fi
+    fi
   done
 else
   sbatch --array=0-$((JOB_COUNT - 1))%${MAX_CONCURRENT} \
