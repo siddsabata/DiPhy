@@ -81,3 +81,36 @@ Check tumor checkpoints: `ls output/<PARAM_SET_ID>/tumors/`
 
 Check resamples: `ls output/<PARAM_SET_ID>/resamples/`
 
+## Regime-Scale SLURM Workflow (v2)
+
+This workflow expands a regime-based config into 20,000 unique tumor configs
+and runs each tumor as a single SLURM array task (no nested multiprocessing).
+
+### 1) Build the job manifest
+
+```bash
+python datagen/build_jobs.py --config datagen/configs/regimes.yaml
+```
+
+This creates `datagen/output/<run_id>/jobs.jsonl`, `jobs_index.json`, and
+`summary.json`.
+
+### 2) Submit the array
+
+```bash
+datagen/scripts/submit_generate.sh datagen/configs/regimes.yaml
+```
+
+This submits one array task per unique tumor. Each task retries up to
+`attempts_per_tumor` and stops on first success.
+
+### 3) Collect the dataset index
+
+```bash
+python datagen/collect_dataset.py --run-id sistem_regimes_v1
+```
+
+### Success criteria
+
+A tumor attempt is considered successful only if all of the following exist:
+`gs.pkl`, `SNV_events.tsv`, and `clone_tree.nwk`.
