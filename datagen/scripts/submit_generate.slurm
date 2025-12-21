@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=sistem_regimes
-#SBATCH --output=logs/sistem_regimes_%A_%a.out
-#SBATCH --error=logs/sistem_regimes_%A_%a.err
+#SBATCH --output=/dev/null
+#SBATCH --error=/dev/null
 #SBATCH --time=72:00:00
 #SBATCH --partition=RM-shared
 #SBATCH --nodes=1
