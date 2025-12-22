@@ -10,7 +10,7 @@
 #SBATCH --mem=15GB
 #SBATCH -A bio230007p
 
-source /Users/siddharthsabata/dev/research/DiPhy/.venv/bin/activate
+source /ocean/projects/cis250063p/ssabata/DiPhy/.venv/bin/activate
 
 python dataops/build_dataset.py \
     --input-root datagen/output/sistem_regimes_v1 \
