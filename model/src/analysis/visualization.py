@@ -242,8 +242,9 @@ class NonMolecularVisualization:
             graph = self.to_networkx(graphs[i][0].numpy(), graphs[i][1].numpy())
             self.visualize_non_molecule(graph=graph, pos=None, path=file_path)
             im = plt.imread(file_path)
-            if wandb.run and log is not None:
-                wandb.log({log: [wandb.Image(im, caption=file_path)]})
+            # Disabled: too noisy for W&B dashboard
+            # if wandb.run and log is not None:
+            #     wandb.log({log: [wandb.Image(im, caption=file_path)]})
 
     def visualize_chain(self, path, nodes_list, adjacency_matrix):
         # convert graphs to networkx
@@ -265,5 +266,6 @@ class NonMolecularVisualization:
         gif_path = os.path.join(os.path.dirname(path), '{}.gif'.format(path.split('/')[-1]))
         imgs.extend([imgs[-1]] * 10)
         imageio.mimsave(gif_path, imgs, subrectangles=True, duration=20)
-        if wandb.run:
-            wandb.log({'chain': [wandb.Video(gif_path, caption=gif_path, format="gif")]})
+        # Disabled: too noisy for W&B dashboard
+        # if wandb.run:
+        #     wandb.log({'chain': [wandb.Video(gif_path, caption=gif_path, format="gif")]})

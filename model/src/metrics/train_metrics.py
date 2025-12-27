@@ -40,13 +40,12 @@ class TrainLossDiscrete(nn.Module):
         loss_E = self.edge_loss(flat_pred_E, flat_true_E) if true_E.numel() > 0 else 0.0
         loss_y = self.y_loss(pred_y, true_y) if true_y.numel() > 0 else 0.0
 
-        if log:
-            to_log = {"train_loss/batch_CE": (loss_X + loss_E + loss_y).detach(),
-                      "train_loss/X_CE": self.node_loss.compute() if true_X.numel() > 0 else -1,
-                      "train_loss/E_CE": self.edge_loss.compute() if true_E.numel() > 0 else -1,
-                      "train_loss/y_CE": self.y_loss.compute() if true_y.numel() > 0 else -1}
-            if wandb.run:
-                wandb.log(to_log, commit=True)
+        if log and wandb.run:
+            # Only log X (node) and E (edge) losses
+            wandb.log({
+                "train/X_loss": self.node_loss.compute() if true_X.numel() > 0 else 0,
+                "train/E_loss": self.edge_loss.compute() if true_E.numel() > 0 else 0,
+            }, commit=True)
         return loss_X + self.lambda_train[0] * loss_E + self.lambda_train[1] * loss_y
 
     def reset(self):
@@ -58,13 +57,16 @@ class TrainLossDiscrete(nn.Module):
         epoch_edge_loss = self.edge_loss.compute() if self.edge_loss.total_samples > 0 else -1
         epoch_y_loss = self.y_loss.compute() if self.y_loss.total_samples > 0 else -1
 
-        to_log = {"train_epoch/x_CE": epoch_node_loss,
-                  "train_epoch/E_CE": epoch_edge_loss,
-                  "train_epoch/y_CE": epoch_y_loss}
+        # Simplified logging - just X and E
         if wandb.run:
-            wandb.log(to_log, commit=False)
+            wandb.log({
+                "train_epoch/X_loss": epoch_node_loss,
+                "train_epoch/E_loss": epoch_edge_loss,
+            }, commit=False)
 
-        return to_log
+        return {"train_epoch/x_CE": epoch_node_loss,
+                "train_epoch/E_CE": epoch_edge_loss,
+                "train_epoch/y_CE": epoch_y_loss}
 
 
 

@@ -37,13 +37,28 @@ class PhyloSamplingMetrics(nn.Module):
             print(f"[PhyloSamplingMetrics] Delta: {delta}")
 
         if wandb.run:
-            log_payload = {}
-            for key, value in generated_stats.items():
-                ref_value = reference_stats.get(key, 0.0)
-                log_payload[f'sampling/{key}_gen'] = value
-                log_payload[f'sampling/{key}_ref'] = ref_value
-                log_payload[f'sampling/{key}_delta'] = value - ref_value
-            wandb.log(log_payload, commit=False)
+            # Each metric gets its own chart with gen + ref lines overlaid
+            # Using "metric/gen" and "metric/ref" pattern groups them in W&B
+            wandb.log({
+                # Mean Nodes chart
+                "mean_nodes/generated": generated_stats['mean_nodes'],
+                "mean_nodes/reference": reference_stats['mean_nodes'],
+                # Mean Edges chart
+                "mean_edges/generated": generated_stats['mean_edges'],
+                "mean_edges/reference": reference_stats['mean_edges'],
+                # Density chart
+                "density/generated": generated_stats['mean_density'],
+                "density/reference": reference_stats['mean_density'],
+                # Clone Fraction chart
+                "clone_fraction/generated": generated_stats['mean_clone_fraction'],
+                "clone_fraction/reference": reference_stats['mean_clone_fraction'],
+                # Mutation Fraction chart
+                "mutation_fraction/generated": generated_stats['mean_mutation_fraction'],
+                "mutation_fraction/reference": reference_stats['mean_mutation_fraction'],
+                # Validity chart
+                "validity_pct/generated": generated_stats['validity_pass_pct'],
+                "validity_pct/reference": reference_stats['validity_pass_pct'],
+            }, commit=False)
 
     def _stats_from_loader(self, loader):
         nodes = []

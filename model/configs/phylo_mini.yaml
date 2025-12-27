@@ -1,20 +1,20 @@
 general:
-  name: phylo
+  name: phylo_mini
   wandb: online
-  gpus: 4
-  check_val_every_n_epochs: 50
+  gpus: 1
+  check_val_every_n_epochs: 2
   sample_every_val: 1
-  samples_to_generate: 100
-  samples_to_save: 5
+  samples_to_generate: 10
+  samples_to_save: 1
   chains_to_save: 1
-  final_model_samples_to_generate: 100
-  final_model_samples_to_save: 10
+  final_model_samples_to_generate: 10
+  final_model_samples_to_save: 1
   final_model_chains_to_save: 1
   log_every_steps: 50
   number_chain_steps: 50
 
 model:
-  transition: uniform
+  transition: marginal
   diffusion_steps: 1000
   diffusion_noise_schedule: cosine
   n_layers: 8
@@ -35,8 +35,8 @@ model:
     - 0
 
 train:
-  n_epochs: 500
-  batch_size: 8
+  n_epochs: 10
+  batch_size: 64
   lr: 0.0002
   clip_grad: null
   save_model: true
@@ -47,10 +47,10 @@ train:
   optimizer: adamw
   seed: 0
   log_gpu_memory: false  # Log GPU memory usage each epoch
-  checkpoint_every_n_epochs: 100  # Periodic checkpoints (epoch100, epoch200, ...)
+  checkpoint_every_n_epochs: 5  # Periodic checkpoints (epoch100, epoch200, ...)
 
 dataset:
-  data_path: model/data/dev.pkl
+  data_path: model/data/main_filtered.pkl
   split_ratios:
     - 0.8
     - 0.1

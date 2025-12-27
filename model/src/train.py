@@ -80,24 +80,36 @@ def build_callbacks(cfg: DictConfig, output_dir: str):
     checkpoint_dir = os.path.join(output_dir, "checkpoints")
 
     if cfg.train.save_model:
-        # Save top-k best models by validation NLL
+        # 1. Best checkpoint by validation NLL (always keeps the single best)
         best_checkpoint = ModelCheckpoint(
             dirpath=checkpoint_dir,
-            filename='epoch{epoch}',
+            filename='best',
             monitor='val/epoch_NLL',
-            save_top_k=3,
+            save_top_k=1,
             mode='min',
-            every_n_epochs=1
         )
         callbacks.append(best_checkpoint)
 
-        # Save last checkpoint for potential resume
+        # 2. Last checkpoint for resuming (overwrites each epoch)
         last_checkpoint = ModelCheckpoint(
             dirpath=checkpoint_dir,
             filename='last',
-            every_n_epochs=1
+            save_top_k=1,
+            every_n_epochs=1,
         )
         callbacks.append(last_checkpoint)
+
+        # 3. Periodic checkpoints (e.g., every 100 epochs for 500 total)
+        # Default: 5 checkpoints spread across training
+        checkpoint_every_n = getattr(cfg.train, 'checkpoint_every_n_epochs', cfg.train.n_epochs // 5)
+        if checkpoint_every_n > 0:
+            periodic_checkpoint = ModelCheckpoint(
+                dirpath=checkpoint_dir,
+                filename='epoch{epoch:03d}',
+                save_top_k=-1,  # Keep all periodic checkpoints
+                every_n_epochs=checkpoint_every_n,
+            )
+            callbacks.append(periodic_checkpoint)
 
     # Optional EMA callback
     if cfg.train.ema_decay > 0:
