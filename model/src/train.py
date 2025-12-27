@@ -21,6 +21,7 @@ if _MODEL_DIR not in sys.path:
 
 import torch
 import hydra
+from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -73,15 +74,16 @@ def setup_model(cfg: DictConfig):
     return datamodule, model
 
 
-def build_callbacks(cfg: DictConfig):
+def build_callbacks(cfg: DictConfig, output_dir: str):
     """Create checkpoint callbacks for saving best models."""
     callbacks = []
+    checkpoint_dir = os.path.join(output_dir, "checkpoints")
 
     if cfg.train.save_model:
         # Save top-k best models by validation NLL
         best_checkpoint = ModelCheckpoint(
-            dirpath=f"checkpoints/{cfg.general.name}",
-            filename='best-{epoch}-{val_epoch_NLL:.4f}',
+            dirpath=checkpoint_dir,
+            filename='epoch{epoch}',
             monitor='val/epoch_NLL',
             save_top_k=3,
             mode='min',
@@ -91,7 +93,7 @@ def build_callbacks(cfg: DictConfig):
 
         # Save last checkpoint for potential resume
         last_checkpoint = ModelCheckpoint(
-            dirpath=f"checkpoints/{cfg.general.name}",
+            dirpath=checkpoint_dir,
             filename='last',
             every_n_epochs=1
         )
@@ -108,15 +110,20 @@ def build_callbacks(cfg: DictConfig):
 @hydra.main(version_base='1.3', config_path='../configs', config_name='config')
 def main(cfg: DictConfig):
     """Main training entry point."""
-    # Create output directories
-    utils.create_folders(cfg)
+    # Get Hydra output directory
+    output_dir = HydraConfig.get().runtime.output_dir
+    print(f"[train.py] Output directory: {output_dir}")
+
+    # Create output directories inside Hydra's output dir
+    utils.create_folders(output_dir)
 
     # Debug mode warning
     if cfg.general.name == 'debug':
         print("[WARNING]: Run is called 'debug' -- it will run with fast_dev_run.")
 
-    # Setup model and data
+    # Setup model and data (pass output_dir for graphs/chains)
     datamodule, model = setup_model(cfg)
+    model.output_dir = output_dir  # Store for use in visualization
 
     # Build trainer
     use_gpu = cfg.general.gpus > 0 and torch.cuda.is_available()
@@ -130,7 +137,7 @@ def main(cfg: DictConfig):
         check_val_every_n_epoch=cfg.general.check_val_every_n_epochs,
         fast_dev_run=cfg.general.name == 'debug',
         enable_progress_bar=cfg.train.progress_bar,
-        callbacks=build_callbacks(cfg),
+        callbacks=build_callbacks(cfg, output_dir),
         log_every_n_steps=cfg.general.log_every_steps,
         logger=[]
     )
@@ -139,7 +146,7 @@ def main(cfg: DictConfig):
     trainer.fit(model, datamodule=datamodule)
 
     print(f"\n[train.py] Training complete!")
-    print(f"[train.py] Checkpoints saved to: checkpoints/{cfg.general.name}/")
+    print(f"[train.py] Checkpoints saved to: {os.path.join(output_dir, 'checkpoints')}")
 
 
 if __name__ == '__main__':

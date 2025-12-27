@@ -644,12 +644,12 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         # Visualize chains
         if self.visualization_tools is not None:
             self.print('Visualizing chains...')
-            current_path = os.getcwd()
+            # Use output_dir set by train.py, fallback to cwd
+            base_path = getattr(self, 'output_dir', os.getcwd())
             num_molecules = chain_X.size(1)       # number of molecules
             for i in range(num_molecules):
-                result_path = os.path.join(current_path, f'chains/{self.cfg.general.name}/'
-                                                         f'epoch{self.current_epoch}/'
-                                                         f'chains/molecule_{batch_id + i}')
+                result_path = os.path.join(base_path, f'chains/epoch{self.current_epoch}/'
+                                                      f'molecule_{batch_id + i}')
                 if not os.path.exists(result_path):
                     os.makedirs(result_path)
                     _ = self.visualization_tools.visualize_chain(result_path,
@@ -659,9 +659,8 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
             self.print('\nVisualizing molecules...')
 
             # Visualize the final molecules
-            current_path = os.getcwd()
-            result_path = os.path.join(current_path,
-                                       f'graphs/{self.name}/epoch{self.current_epoch}_b{batch_id}/')
+            result_path = os.path.join(base_path,
+                                       f'graphs/epoch{self.current_epoch}_b{batch_id}/')
             self.visualization_tools.visualize(result_path, molecule_list, save_final)
             self.print("Done.")
 

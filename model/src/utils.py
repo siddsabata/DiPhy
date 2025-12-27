@@ -7,20 +7,11 @@ import omegaconf
 import wandb
 
 
-def create_folders(args):
-    try:
-        # os.makedirs('checkpoints')
-        os.makedirs('graphs')
-        os.makedirs('chains')
-    except OSError:
-        pass
-
-    try:
-        # os.makedirs('checkpoints/' + args.general.name)
-        os.makedirs('graphs/' + args.general.name)
-        os.makedirs('chains/' + args.general.name)
-    except OSError:
-        pass
+def create_folders(output_dir: str):
+    """Create output directories for checkpoints, graphs, and chains."""
+    os.makedirs(os.path.join(output_dir, 'checkpoints'), exist_ok=True)
+    os.makedirs(os.path.join(output_dir, 'graphs'), exist_ok=True)
+    os.makedirs(os.path.join(output_dir, 'chains'), exist_ok=True)
 
 def to_dense(x, edge_index, edge_attr, batch):
     X, node_mask = to_dense_batch(x=x, batch=batch)
