@@ -36,6 +36,13 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="Path to write the combined .pkl file",
     )
+    parser.add_argument(
+        "--max-nodes",
+        type=int,
+        default=200,
+        help="Maximum number of nodes allowed per graph (default: 200). "
+             "Graphs exceeding this limit are filtered out.",
+    )
     return parser.parse_args()
 
 
@@ -54,6 +61,7 @@ def main() -> None:
     args = parse_args()
     input_root = args.input_root.resolve()
     output_path = args.output.resolve()
+    max_nodes = args.max_nodes
 
     regimes_root = input_root / "regimes"
     if not regimes_root.is_dir():
@@ -61,6 +69,7 @@ def main() -> None:
 
     dataset: List[Dict[str, List]] = []
     counts: Dict[str, int] = defaultdict(int)
+    filtered_counts: Dict[str, int] = defaultdict(int)  # Track filtered by regime
     skipped = 0
 
     for regime_dir in sorted(regimes_root.iterdir()):
@@ -106,6 +115,12 @@ def main() -> None:
                 skipped += 1
                 continue
 
+            # Filter by node count
+            num_nodes = len(tree_dict["X"])
+            if num_nodes > max_nodes:
+                filtered_counts[regime_id] += 1
+                continue
+
             dataset.append(tree_dict)
             counts[regime_id] += 1
 
@@ -114,10 +129,17 @@ def main() -> None:
         pickle.dump(dataset, handle)
 
     total = sum(counts.values())
-    print(f"Wrote {total} trees to {output_path}")
-    print("Counts by regime:")
-    for regime_id in sorted(counts):
-        print(f"  {regime_id}: {counts[regime_id]}")
+    total_filtered = sum(filtered_counts.values())
+
+    print(f"\nWrote {total} trees to {output_path}")
+    print(f"Max nodes filter: {max_nodes}")
+    print("\nCounts by regime (kept / filtered):")
+    all_regimes = sorted(set(counts.keys()) | set(filtered_counts.keys()))
+    for regime_id in all_regimes:
+        kept = counts[regime_id]
+        filtered = filtered_counts[regime_id]
+        print(f"  {regime_id}: {kept} kept / {filtered} filtered")
+    print(f"\nTotal: {total} kept / {total_filtered} filtered ({total_filtered/(total+total_filtered)*100:.1f}% removed)")
     if skipped:
         print(f"Skipped: {skipped} entries with missing or invalid outputs")
 
