@@ -264,7 +264,7 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         id = 0
         while samples_left_to_generate > 0:
             self.print(f'Samples left to generate: {samples_left_to_generate}/'
-                       f'{self.cfg.general.final_model_samples_to_generate}', end='', flush=True)
+                       f'{self.cfg.general.final_model_samples_to_generate}', end='')
             bs = 2 * self.cfg.train.batch_size
             to_generate = min(samples_left_to_generate, bs)
             to_save = min(samples_left_to_save, bs)
@@ -655,7 +655,7 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                     _ = self.visualization_tools.visualize_chain(result_path,
                                                                  chain_X[:, i, :].numpy(),
                                                                  chain_E[:, i, :].numpy())
-                self.print('\r{}/{} complete'.format(i+1, num_molecules), end='', flush=True)
+                self.print('\r{}/{} complete'.format(i+1, num_molecules), end='')
             self.print('\nVisualizing molecules...')
 
             # Visualize the final molecules
