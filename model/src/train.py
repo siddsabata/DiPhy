@@ -2,16 +2,22 @@
 train.py - Training script for DiPhy discrete diffusion model.
 
 Usage:
-    python train.py
-    python train.py dataset.data_path=/path/to/data.pkl
-    python train.py train.n_epochs=1000 general.gpus=2
+    python model/src/train.py --config-name=dev
+    python model/src/train.py dataset.data_path=/path/to/data.pkl
+    python model/src/train.py train.n_epochs=1000 general.gpus=2
 
 For SLURM:
-    sbatch scripts/train.slurm
+    sbatch model/scripts/train.slurm
 """
 
 import os
+import sys
 import warnings
+
+# Add model/ directory to path so 'src' is importable
+_MODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _MODEL_DIR not in sys.path:
+    sys.path.insert(0, _MODEL_DIR)
 
 import torch
 import hydra

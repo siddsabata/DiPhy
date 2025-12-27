@@ -2,19 +2,25 @@
 sample.py - Generate phylogenetic graphs from a trained DiPhy model.
 
 Usage:
-    python sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 100
-    python sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 500 --output_dir ./samples
-    python sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 100 --batch_size 16
+    python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 100
+    python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 500 --output_dir ./samples
+    python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 100 --batch_size 16
 
 For SLURM:
-    sbatch scripts/sample.slurm
+    sbatch model/scripts/sample.slurm
 """
 
 import argparse
 import os
+import sys
 import pickle
 from pathlib import Path
 from typing import List, Tuple
+
+# Add model/ directory to path so 'src' is importable
+_MODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _MODEL_DIR not in sys.path:
+    sys.path.insert(0, _MODEL_DIR)
 
 import torch
 
