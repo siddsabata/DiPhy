@@ -109,6 +109,7 @@ def build_callbacks(cfg: DictConfig, output_dir: str):
                 auto_insert_metric_name=False,  # Prevents "epoch=" prefix
                 save_top_k=-1,  # Keep all periodic checkpoints
                 every_n_epochs=checkpoint_every_n,
+                save_on_train_epoch_end=True,  # Save based on training epochs, not validation
             )
             callbacks.append(periodic_checkpoint)
 

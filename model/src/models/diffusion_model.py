@@ -136,7 +136,7 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         self.train_metrics.reset()
 
     def on_train_epoch_end(self) -> None:
-        to_log = self.train_loss.log_epoch_metrics()
+        to_log = self.train_loss.log_epoch_metrics(local_rank=self.local_rank)
         self.print(f"Epoch {self.current_epoch}: X_CE: {to_log['train_epoch/x_CE'] :.3f}"
                       f" -- E_CE: {to_log['train_epoch/E_CE'] :.3f} --"
                       f" y_CE: {to_log['train_epoch/y_CE'] :.3f}"
@@ -176,8 +176,8 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         metrics = [self.val_nll.compute(), self.val_X_kl.compute() * self.T, self.val_E_kl.compute() * self.T,
                    self.val_X_logp.compute(), self.val_E_logp.compute()]
 
-        # Simplified W&B logging - just NLL
-        if wandb.run:
+        # Simplified W&B logging - just NLL (only rank 0)
+        if self.local_rank == 0 and wandb.run:
             wandb.log({"val/NLL": metrics[0]}, commit=False)
 
         self.print(f"Epoch {self.current_epoch}: Val NLL {metrics[0] :.2f} -- Val Atom type KL {metrics[1] :.2f} -- ",
@@ -192,7 +192,8 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         self.print('Val loss: %.4f \t Best val loss:  %.4f\n' % (val_nll, self.best_val_nll))
 
         self.val_counter += 1
-        if self.val_counter % self.cfg.general.sample_every_val == 0:
+        # Only run sampling on rank 0 to avoid multi-GPU sync issues
+        if self.val_counter % self.cfg.general.sample_every_val == 0 and self.local_rank == 0:
             start = time.time()
             samples_left_to_generate = self.cfg.general.samples_to_generate
             samples_left_to_save = self.cfg.general.samples_to_save
@@ -249,55 +250,57 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                    f"Test Edge type KL: {metrics[2] :.2f}")
 
         test_nll = metrics[0]
-        # Simplified test logging - just NLL
-        if wandb.run:
+        # Simplified test logging - just NLL (only rank 0)
+        if self.local_rank == 0 and wandb.run:
             wandb.log({"test/NLL": test_nll}, commit=False)
 
         self.print(f'Test loss: {test_nll :.4f}')
 
-        samples_left_to_generate = self.cfg.general.final_model_samples_to_generate
-        samples_left_to_save = self.cfg.general.final_model_samples_to_save
-        chains_left_to_save = self.cfg.general.final_model_chains_to_save
+        # Only run sampling on rank 0 to avoid multi-GPU sync issues
+        if self.local_rank == 0:
+            samples_left_to_generate = self.cfg.general.final_model_samples_to_generate
+            samples_left_to_save = self.cfg.general.final_model_samples_to_save
+            chains_left_to_save = self.cfg.general.final_model_chains_to_save
 
-        samples = []
-        id = 0
-        while samples_left_to_generate > 0:
-            self.print(f'Samples left to generate: {samples_left_to_generate}/'
-                       f'{self.cfg.general.final_model_samples_to_generate}', end='')
-            bs = 2 * self.cfg.train.batch_size
-            to_generate = min(samples_left_to_generate, bs)
-            to_save = min(samples_left_to_save, bs)
-            chains_save = min(chains_left_to_save, bs)
-            samples.extend(self.sample_batch(id, to_generate, num_nodes=None, save_final=to_save,
-                                             keep_chain=chains_save, number_chain_steps=self.number_chain_steps))
-            id += to_generate
-            samples_left_to_save -= to_save
-            samples_left_to_generate -= to_generate
-            chains_left_to_save -= chains_save
-        self.print("Saving the generated graphs")
-        filename = f'generated_samples1.txt'
-        for i in range(2, 10):
-            if os.path.exists(filename):
-                filename = f'generated_samples{i}.txt'
-            else:
-                break
-        with open(filename, 'w') as f:
-            for item in samples:
-                f.write(f"N={item[0].shape[0]}\n")
-                atoms = item[0].tolist()
-                f.write("X: \n")
-                for at in atoms:
-                    f.write(f"{at} ")
-                f.write("\n")
-                f.write("E: \n")
-                for bond_list in item[1]:
-                    for bond in bond_list:
-                        f.write(f"{bond} ")
+            samples = []
+            id = 0
+            while samples_left_to_generate > 0:
+                self.print(f'Samples left to generate: {samples_left_to_generate}/'
+                           f'{self.cfg.general.final_model_samples_to_generate}', end='')
+                bs = 2 * self.cfg.train.batch_size
+                to_generate = min(samples_left_to_generate, bs)
+                to_save = min(samples_left_to_save, bs)
+                chains_save = min(chains_left_to_save, bs)
+                samples.extend(self.sample_batch(id, to_generate, num_nodes=None, save_final=to_save,
+                                                 keep_chain=chains_save, number_chain_steps=self.number_chain_steps))
+                id += to_generate
+                samples_left_to_save -= to_save
+                samples_left_to_generate -= to_generate
+                chains_left_to_save -= chains_save
+            self.print("Saving the generated graphs")
+            filename = f'generated_samples1.txt'
+            for i in range(2, 10):
+                if os.path.exists(filename):
+                    filename = f'generated_samples{i}.txt'
+                else:
+                    break
+            with open(filename, 'w') as f:
+                for item in samples:
+                    f.write(f"N={item[0].shape[0]}\n")
+                    atoms = item[0].tolist()
+                    f.write("X: \n")
+                    for at in atoms:
+                        f.write(f"{at} ")
                     f.write("\n")
-                f.write("\n")
-        self.print("Generated graphs Saved. Computing sampling metrics...")
-        self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)
-        self.print("Done testing.")
+                    f.write("E: \n")
+                    for bond_list in item[1]:
+                        for bond in bond_list:
+                            f.write(f"{bond} ")
+                        f.write("\n")
+                    f.write("\n")
+            self.print("Generated graphs Saved. Computing sampling metrics...")
+            self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)
+            self.print("Done testing.")
 
 
     def kl_prior(self, X, E, node_mask):

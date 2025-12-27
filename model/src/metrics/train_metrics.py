@@ -40,25 +40,21 @@ class TrainLossDiscrete(nn.Module):
         loss_E = self.edge_loss(flat_pred_E, flat_true_E) if true_E.numel() > 0 else 0.0
         loss_y = self.y_loss(pred_y, true_y) if true_y.numel() > 0 else 0.0
 
-        if log and wandb.run:
-            # Only log X (node) and E (edge) losses
-            wandb.log({
-                "train/X_loss": self.node_loss.compute() if true_X.numel() > 0 else 0,
-                "train/E_loss": self.edge_loss.compute() if true_E.numel() > 0 else 0,
-            }, commit=True)
+        # Note: Per-batch W&B logging removed to avoid NCCL timeout in multi-GPU training
+        # Metrics are logged at epoch end instead
         return loss_X + self.lambda_train[0] * loss_E + self.lambda_train[1] * loss_y
 
     def reset(self):
         for metric in [self.node_loss, self.edge_loss, self.y_loss]:
             metric.reset()
 
-    def log_epoch_metrics(self):
+    def log_epoch_metrics(self, local_rank: int = 0):
         epoch_node_loss = self.node_loss.compute() if self.node_loss.total_samples > 0 else -1
         epoch_edge_loss = self.edge_loss.compute() if self.edge_loss.total_samples > 0 else -1
         epoch_y_loss = self.y_loss.compute() if self.y_loss.total_samples > 0 else -1
 
-        # Simplified logging - just X and E
-        if wandb.run:
+        # Only log to W&B from rank 0 to avoid multi-GPU issues
+        if local_rank == 0 and wandb.run:
             wandb.log({
                 "train_epoch/X_loss": epoch_node_loss,
                 "train_epoch/E_loss": epoch_edge_loss,
