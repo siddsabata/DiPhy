@@ -106,6 +106,7 @@ def build_callbacks(cfg: DictConfig, output_dir: str):
             periodic_checkpoint = ModelCheckpoint(
                 dirpath=checkpoint_dir,
                 filename='epoch{epoch:03d}',
+                auto_insert_metric_name=False,  # Prevents "epoch=" prefix
                 save_top_k=-1,  # Keep all periodic checkpoints
                 every_n_epochs=checkpoint_every_n,
             )

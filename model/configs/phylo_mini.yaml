@@ -1,7 +1,7 @@
 general:
-  name: phylo_mini
+  name: phylo_minix4
   wandb: online
-  gpus: 1
+  gpus: 4
   check_val_every_n_epochs: 2
   sample_every_val: 1
   samples_to_generate: 10
@@ -47,7 +47,7 @@ train:
   optimizer: adamw
   seed: 0
   log_gpu_memory: true  # Log GPU memory usage each epoch
-  checkpoint_every_n_epochs: 5  # Periodic checkpoints (epoch100, epoch200, ...)
+  checkpoint_every_n_epochs: 2  # Periodic checkpoints (epoch100, epoch200, ...)
 
 dataset:
   data_path: model/data/main_filtered.pkl

@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -A <your_account>
+#SBATCH -A cis250160p
 #SBATCH -p GPU-shared
-#SBATCH --gpus=v100-32:4
+#SBATCH --gpus=h100-80:4
 #SBATCH --time=24:00:00
 #SBATCH --mem=48G
 #SBATCH --output=train_%j.out
@@ -17,8 +17,8 @@
 # ==============================================================================
 
 # --- Configuration ---
-PROJECT_DIR="/path/to/DiPhy"
-CONFIG_NAME="config"  # Use "dev" for testing, "config" for production
+PROJECT_DIR="/ocean/projects/cis250063p/ssabata/DiPhy/"
+CONFIG_NAME="phylo_mini"  # Use "dev" for testing, "config" for production
 
 # --- Environment Setup ---
 cd "${PROJECT_DIR}"
