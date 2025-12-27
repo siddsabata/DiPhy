@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -A cis250160p
+#SBATCH -A cis250063p
 #SBATCH -p GPU-shared
 #SBATCH --gpus=h100-80:4
 #SBATCH --time=24:00:00
