@@ -42,11 +42,11 @@ train:
   save_model: true
   num_workers: 0
   ema_decay: 0
-  progress_bar: false
+  progress_bar: true
   weight_decay: 1.0e-12
   optimizer: adamw
   seed: 0
-  log_gpu_memory: false  # Log GPU memory usage each epoch
+  log_gpu_memory: true  # Log GPU memory usage each epoch
   checkpoint_every_n_epochs: 5  # Periodic checkpoints (epoch100, epoch200, ...)
 
 dataset:
