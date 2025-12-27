@@ -1,0 +1,59 @@
+# Dev config for quick testing - reduced parameters to verify pipeline works
+# Usage: python model/src/train.py --config-name=dev
+
+general:
+  name: dev
+  wandb: disabled  # Disable wandb for quick testing
+  gpus: 1  # Single GPU for testing
+  check_val_every_n_epochs: 2  # Validate frequently
+  sample_every_val: 1
+  samples_to_generate: 10  # Fewer samples
+  samples_to_save: 2
+  chains_to_save: 1
+  final_model_samples_to_generate: 10
+  final_model_samples_to_save: 2
+  final_model_chains_to_save: 1
+  log_every_steps: 10
+  number_chain_steps: 10
+
+model:
+  transition: uniform
+  diffusion_steps: 100  # Reduced for faster testing
+  diffusion_noise_schedule: cosine
+  n_layers: 4  # Smaller model
+  hidden_mlp_dims:
+    X: 64
+    E: 32
+    'y': 64
+  hidden_dims:
+    dx: 128
+    de: 32
+    dy: 32
+    n_head: 4
+    dim_ffX: 128
+    dim_ffE: 32
+    dim_ffy: 128
+  lambda_train:
+    - 5
+    - 0
+
+train:
+  n_epochs: 5  # Just a few epochs to test
+  batch_size: 4  # Smaller batch
+  lr: 0.0002
+  clip_grad: null
+  save_model: true
+  num_workers: 0
+  ema_decay: 0
+  progress_bar: true  # Enable progress bar for dev
+  weight_decay: 1.0e-12
+  optimizer: adamw
+  seed: 42
+
+dataset:
+  data_path: data/dev.pkl
+  split_ratios:
+    - 0.8
+    - 0.1
+    - 0.1
+  split_seed: 0

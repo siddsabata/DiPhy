@@ -7,16 +7,36 @@
 #SBATCH --output=train_%j.out
 #SBATCH --error=train_%j.err
 
-# Load environment
-module load anaconda3
-conda activate <your_conda_env>
+# ==============================================================================
+# DiPhy Training Script
+# ==============================================================================
+# Update the following before running:
+#   1. SBATCH -A <your_account>  -> your allocation account
+#   2. PROJECT_DIR               -> absolute path to DiPhy repo
+#   3. WANDB_API_KEY             -> your W&B key (or set wandb: disabled in config)
+# ==============================================================================
 
-# Set wandb API key (or disable with: export WANDB_MODE=disabled)
-export WANDB_API_KEY=<your_wandb_api_key>
+# --- Configuration ---
+PROJECT_DIR="/path/to/DiPhy"
+CONFIG_NAME="config"  # Use "dev" for testing, "config" for production
 
-# Run training
-# Update paths below to match your setup
-python /path/to/DiPhy/model/src/train.py \
-    dataset.data_path=/path/to/phylo.pkl \
-    general.gpus=4 \
-    train.n_epochs=500
+# --- Environment Setup ---
+cd "${PROJECT_DIR}"
+
+# Option 1: Use uv (recommended)
+source .venv/bin/activate
+
+# Option 2: If uv venv not available, create it
+# module load python/3.11
+# uv sync
+# source .venv/bin/activate
+
+# --- Weights & Biases ---
+# Set your API key, or disable W&B in config with: general.wandb=disabled
+export WANDB_API_KEY="${WANDB_API_KEY:-<your_wandb_api_key>}"
+
+# --- Run Training ---
+python model/src/train.py \
+    --config-name="${CONFIG_NAME}" \
+    dataset.data_path=model/data/dev.pkl \
+    general.gpus=4

@@ -7,6 +7,9 @@ general:
   samples_to_generate: 100
   samples_to_save: 5
   chains_to_save: 1
+  final_model_samples_to_generate: 100
+  final_model_samples_to_save: 10
+  final_model_chains_to_save: 1
   log_every_steps: 50
   number_chain_steps: 50
 
@@ -45,7 +48,7 @@ train:
   seed: 0
 
 dataset:
-  data_path: data/phylo.pkl
+  data_path: data/dev.pkl
   split_ratios:
     - 0.8
     - 0.1
