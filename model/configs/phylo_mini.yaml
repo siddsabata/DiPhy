@@ -36,7 +36,7 @@ model:
 
 train:
   n_epochs: 10
-  batch_size: 64
+  batch_size: 32
   lr: 0.0002
   clip_grad: null
   save_model: true
