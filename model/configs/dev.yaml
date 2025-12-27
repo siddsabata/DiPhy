@@ -49,6 +49,7 @@ train:
   weight_decay: 1.0e-12
   optimizer: adamw
   seed: 42
+  log_gpu_memory: true  # Log GPU memory usage each epoch
 
 dataset:
   data_path: model/data/dev.pkl

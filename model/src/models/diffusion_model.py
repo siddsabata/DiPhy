@@ -143,11 +143,17 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                       f" -- {time.time() - self.start_epoch_time:.1f}s ")
         epoch_at_metrics, epoch_bond_metrics = self.train_metrics.log_epoch_metrics()
         self.print(f"Epoch {self.current_epoch}: {epoch_at_metrics} -- {epoch_bond_metrics}")
-        if getattr(self.cfg.train, "log_memory_summary", False):
-            if torch.cuda.is_available():
-                print(torch.cuda.memory_summary())
-            else:
-                print("CUDA is not available. Skipping memory summary.")
+
+        # GPU memory logging (simple one-liner)
+        if getattr(self.cfg.train, "log_gpu_memory", False) and torch.cuda.is_available():
+            allocated = torch.cuda.memory_allocated() / 1024**3
+            reserved = torch.cuda.memory_reserved() / 1024**3
+            max_allocated = torch.cuda.max_memory_allocated() / 1024**3
+            self.print(f"GPU Memory: {allocated:.2f}GB allocated, {reserved:.2f}GB reserved, {max_allocated:.2f}GB peak")
+
+        # Full memory summary (verbose)
+        if getattr(self.cfg.train, "log_memory_summary", False) and torch.cuda.is_available():
+            print(torch.cuda.memory_summary())
 
     def on_validation_epoch_start(self) -> None:
         self.val_nll.reset()

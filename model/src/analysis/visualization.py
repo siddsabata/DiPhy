@@ -228,6 +228,10 @@ class NonMolecularVisualization:
         return (_towards_white(base_r), _towards_white(base_g), _towards_white(base_b))
 
     def visualize(self, path: str, graphs: list, num_graphs_to_visualize: int, log='graph'):
+        # Skip if nothing to visualize
+        if num_graphs_to_visualize <= 0:
+            return
+
         # define path to save figures
         if not os.path.exists(path):
             os.makedirs(path)
