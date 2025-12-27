@@ -126,7 +126,7 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
     def on_fit_start(self) -> None:
         self.train_iterations = len(self.trainer.datamodule.train_dataloader())
         self.print("Size of the input features", self.Xdim, self.Edim, self.ydim)
-        if self.local_rank == 0:
+        if self.local_rank == 0 and self.cfg.general.wandb != 'disabled':
             utils.setup_wandb(self.cfg)
 
     def on_train_epoch_start(self) -> None:

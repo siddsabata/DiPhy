@@ -105,7 +105,9 @@ class PlaceHolder:
 
 def setup_wandb(cfg):
     config_dict = omegaconf.OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
-    kwargs = {'name': cfg.general.name, 'project': f'graph_ddm_{cfg.dataset.name}', 'config': config_dict,
+    # Use dataset.name if available, otherwise default to 'phylo'
+    dataset_name = getattr(cfg.dataset, 'name', 'phylo')
+    kwargs = {'name': cfg.general.name, 'project': f'graph_ddm_{dataset_name}', 'config': config_dict,
               'settings': wandb.Settings(_disable_stats=True), 'reinit': True, 'mode': cfg.general.wandb}
     wandb.init(**kwargs)
     wandb.save('*.txt')
