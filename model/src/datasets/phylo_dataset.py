@@ -54,10 +54,12 @@ class PhyloGraphDataset(Dataset):
         self.max_cached_shards = max(1, int(max_cached_shards))
         self._shard_cache: "OrderedDict[str, List[Dict[str, Any]]]" = OrderedDict()
 
-        # Initialize without calling parent's __init__ since we manage paths ourselves
+        # Initialize attributes that parent Dataset expects
+        # We don't call super().__init__() since we manage paths ourselves
         self.transform = transform
         self.pre_transform = None
         self.pre_filter = None
+        self._indices = None  # Required by PyTorch Geometric Dataset
 
         # Ensure cache directory exists
         self._cache_dir.mkdir(parents=True, exist_ok=True)
