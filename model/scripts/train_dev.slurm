@@ -23,5 +23,4 @@ source .venv/bin/activate
 export WANDB_MODE=disabled
 
 python model/src/train.py \
-    --config-name=dev \
-    dataset.data_path=model/data/dev.pkl
+    --config-name=dev

@@ -38,5 +38,4 @@ export WANDB_API_KEY="${WANDB_API_KEY:-<your_wandb_api_key>}"
 # --- Run Training ---
 python model/src/train.py \
     --config-name="${CONFIG_NAME}" \
-    dataset.data_path=model/data/dev.pkl \
     general.gpus=4

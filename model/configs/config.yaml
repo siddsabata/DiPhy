@@ -48,7 +48,7 @@ train:
   seed: 0
 
 dataset:
-  data_path: data/dev.pkl
+  data_path: model/data/dev.pkl
   split_ratios:
     - 0.8
     - 0.1
