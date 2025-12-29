@@ -1,7 +1,7 @@
 general:
-  name: phylo_minix4
+  name: phylo_minix1
   wandb: online
-  gpus: 4
+  gpus: 1
   check_val_every_n_epochs: 2
   sample_every_val: 1
   samples_to_generate: 10
