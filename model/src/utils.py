@@ -95,8 +95,18 @@ class PlaceHolder:
 
 
 def setup_wandb(cfg):
+    """DEPRECATED: W&B is now initialized via WandbLogger in train.py for DDP compatibility.
+
+    This function is kept for backwards compatibility but should not be called.
+    Use pytorch_lightning.loggers.WandbLogger instead.
+    """
+    import warnings
+    warnings.warn(
+        "setup_wandb() is deprecated. W&B is now initialized via WandbLogger in train.py.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     config_dict = omegaconf.OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
-    # Use dataset.name if available, otherwise default to 'phylo'
     dataset_name = getattr(cfg.dataset, 'name', 'phylo')
     kwargs = {'name': cfg.general.name, 'project': f'graph_ddm_{dataset_name}', 'config': config_dict,
               'settings': wandb.Settings(_disable_stats=True), 'reinit': True, 'mode': cfg.general.wandb}

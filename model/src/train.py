@@ -22,10 +22,18 @@ if _MODEL_DIR not in sys.path:
 import torch
 import hydra
 from hydra.core.hydra_config import HydraConfig
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.utilities import rank_zero_only
 from pytorch_lightning.utilities.warnings import PossibleUserWarning
+
+
+@rank_zero_only
+def print_rank_zero(msg):
+    """Print only on rank 0 (for DDP compatibility)."""
+    print(msg)
 
 from src import utils
 from src.datasets.phylo_dataset import PhyloGraphDataModule, PhyloDatasetInfos
@@ -126,18 +134,28 @@ def main(cfg: DictConfig):
     """Main training entry point."""
     # Get Hydra output directory
     output_dir = HydraConfig.get().runtime.output_dir
-    print(f"[train.py] Output directory: {output_dir}")
+    print_rank_zero(f"[train.py] Output directory: {output_dir}")
 
     # Create output directories inside Hydra's output dir
     utils.create_folders(output_dir)
 
     # Debug mode warning
     if cfg.general.name == 'debug':
-        print("[WARNING]: Run is called 'debug' -- it will run with fast_dev_run.")
+        print_rank_zero("[WARNING]: Run is called 'debug' -- it will run with fast_dev_run.")
 
     # Setup model and data (pass output_dir for graphs/chains)
     datamodule, model = setup_model(cfg)
     model.output_dir = output_dir  # Store for use in visualization
+
+    # Setup W&B logger (only on rank 0, handled by Lightning)
+    wandb_logger = None
+    if cfg.general.wandb != 'disabled':
+        wandb_logger = WandbLogger(
+            project="graph_ddm_phylo",
+            name=cfg.general.name,
+            save_dir=output_dir,
+            config=OmegaConf.to_container(cfg, resolve=True),
+        )
 
     # Build trainer
     use_gpu = cfg.general.gpus > 0 and torch.cuda.is_available()
@@ -153,14 +171,14 @@ def main(cfg: DictConfig):
         enable_progress_bar=cfg.train.progress_bar,
         callbacks=build_callbacks(cfg, output_dir),
         log_every_n_steps=cfg.general.log_every_steps,
-        logger=[]
+        logger=wandb_logger if wandb_logger else [],
     )
 
     # Train (no automatic test phase)
     trainer.fit(model, datamodule=datamodule)
 
-    print(f"\n[train.py] Training complete!")
-    print(f"[train.py] Checkpoints saved to: {os.path.join(output_dir, 'checkpoints')}")
+    print_rank_zero(f"\n[train.py] Training complete!")
+    print_rank_zero(f"[train.py] Checkpoints saved to: {os.path.join(output_dir, 'checkpoints')}")
 
 
 if __name__ == '__main__':

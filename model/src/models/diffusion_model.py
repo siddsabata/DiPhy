@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 import time
-import wandb
 import os
 
 from src.models.transformer import GraphTransformer
@@ -126,8 +125,7 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
     def on_fit_start(self) -> None:
         self.train_iterations = len(self.trainer.datamodule.train_dataloader())
         self.print("Size of the input features", self.Xdim, self.Edim, self.ydim)
-        if self.local_rank == 0 and self.cfg.general.wandb != 'disabled':
-            utils.setup_wandb(self.cfg)
+        # W&B is now initialized via WandbLogger in train.py (DDP-safe)
 
     def on_train_epoch_start(self) -> None:
         self.print("Starting train epoch...")
@@ -136,11 +134,19 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         self.train_metrics.reset()
 
     def on_train_epoch_end(self) -> None:
-        to_log = self.train_loss.log_epoch_metrics(local_rank=self.local_rank)
+        to_log = self.train_loss.log_epoch_metrics()
         self.print(f"Epoch {self.current_epoch}: X_CE: {to_log['train_epoch/x_CE'] :.3f}"
                       f" -- E_CE: {to_log['train_epoch/E_CE'] :.3f} --"
                       f" y_CE: {to_log['train_epoch/y_CE'] :.3f}"
                       f" -- {time.time() - self.start_epoch_time:.1f}s ")
+
+        # Log train metrics to W&B via Lightning's logger
+        if self.logger:
+            self.logger.experiment.log({
+                "train_epoch/X_loss": to_log['train_epoch/x_CE'],
+                "train_epoch/E_loss": to_log['train_epoch/E_CE'],
+            }, commit=False)
+
         epoch_at_metrics, epoch_bond_metrics = self.train_metrics.log_epoch_metrics()
         self.print(f"Epoch {self.current_epoch}: {epoch_at_metrics} -- {epoch_bond_metrics}")
 
@@ -176,9 +182,9 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         metrics = [self.val_nll.compute(), self.val_X_kl.compute() * self.T, self.val_E_kl.compute() * self.T,
                    self.val_X_logp.compute(), self.val_E_logp.compute()]
 
-        # Simplified W&B logging - just NLL (only rank 0)
-        if self.local_rank == 0 and wandb.run:
-            wandb.log({"val/NLL": metrics[0]}, commit=False)
+        # Log to W&B via Lightning's logger (handles DDP automatically)
+        if self.logger:
+            self.logger.experiment.log({"val/NLL": metrics[0]}, commit=False)
 
         self.print(f"Epoch {self.current_epoch}: Val NLL {metrics[0] :.2f} -- Val Atom type KL {metrics[1] :.2f} -- ",
                    f"Val Edge type KL: {metrics[2] :.2f}")
@@ -229,8 +235,7 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         self.test_E_kl.reset()
         self.test_X_logp.reset()
         self.test_E_logp.reset()
-        if self.local_rank == 0:
-            utils.setup_wandb(self.cfg)
+        # W&B is now initialized via WandbLogger in train.py (DDP-safe)
 
     def test_step(self, data, i):
         dense_data, node_mask = utils.to_dense(data.x, data.edge_index, data.edge_attr, data.batch)
@@ -250,9 +255,9 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                    f"Test Edge type KL: {metrics[2] :.2f}")
 
         test_nll = metrics[0]
-        # Simplified test logging - just NLL (only rank 0)
-        if self.local_rank == 0 and wandb.run:
-            wandb.log({"test/NLL": test_nll}, commit=False)
+        # Log to W&B via Lightning's logger (handles DDP automatically)
+        if self.logger:
+            self.logger.experiment.log({"test/NLL": test_nll}, commit=False)
 
         self.print(f'Test loss: {test_nll :.4f}')
 

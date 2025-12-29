@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import wandb
 from src.metrics.abstract_metrics import CrossEntropyMetric
 
 class TrainLossDiscrete(nn.Module):
@@ -48,17 +47,11 @@ class TrainLossDiscrete(nn.Module):
         for metric in [self.node_loss, self.edge_loss, self.y_loss]:
             metric.reset()
 
-    def log_epoch_metrics(self, local_rank: int = 0):
+    def log_epoch_metrics(self):
+        """Compute epoch metrics. W&B logging is handled by the caller via Lightning's logger."""
         epoch_node_loss = self.node_loss.compute() if self.node_loss.total_samples > 0 else -1
         epoch_edge_loss = self.edge_loss.compute() if self.edge_loss.total_samples > 0 else -1
         epoch_y_loss = self.y_loss.compute() if self.y_loss.total_samples > 0 else -1
-
-        # Only log to W&B from rank 0 to avoid multi-GPU issues
-        if local_rank == 0 and wandb.run:
-            wandb.log({
-                "train_epoch/X_loss": epoch_node_loss,
-                "train_epoch/E_loss": epoch_edge_loss,
-            }, commit=False)
 
         return {"train_epoch/x_CE": epoch_node_loss,
                 "train_epoch/E_CE": epoch_edge_loss,
