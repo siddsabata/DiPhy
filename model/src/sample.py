@@ -51,7 +51,8 @@ def load_model(checkpoint_path: str, device: str = 'cuda'):
     print(f"[sample.py] Loading checkpoint: {checkpoint_path}")
 
     # Load checkpoint to get config
-    checkpoint = torch.load(checkpoint_path, map_location='cpu')
+    # weights_only=False needed because checkpoint contains OmegaConf DictConfig objects
+    checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
     cfg = checkpoint['hyper_parameters']['cfg']
 
     # Rebuild model components with dataset stats for node distribution
