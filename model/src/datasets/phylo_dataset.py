@@ -186,7 +186,7 @@ class PhyloGraphDataset(Dataset):
         split_plan_path = os.path.join(self.processed_dir, "split_plan.pt")
 
         if os.path.exists(split_plan_path):
-            plan: Dict[str, List[int]] = torch.load(split_plan_path)
+            plan: Dict[str, List[int]] = torch.load(split_plan_path, weights_only=False)
             return plan
 
         ratios = torch.tensor(self.split_ratios, dtype=torch.float)
@@ -273,7 +273,7 @@ class PhyloGraphDataset(Dataset):
             return shard
 
         shard_path = self._shard_paths[shard_id]
-        shard: List[Dict[str, Any]] = torch.load(shard_path, map_location="cpu")
+        shard: List[Dict[str, Any]] = torch.load(shard_path, map_location="cpu", weights_only=False)
         self._shard_cache[cache_key] = shard
 
         if len(self._shard_cache) > self.max_cached_shards:

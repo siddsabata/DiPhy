@@ -77,8 +77,10 @@ def load_model(checkpoint_path: str, device: str = 'cuda'):
     }
 
     # Load the model from checkpoint
+    # weights_only=False needed because checkpoint contains OmegaConf DictConfig objects
     model = DiscreteDenoisingDiffusion.load_from_checkpoint(
         checkpoint_path,
+        weights_only=False,
         **model_kwargs
     )
     model.to(device)
