@@ -1,9 +1,11 @@
+import os
+import pickle
+import time
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
-import time
-import os
 
 from src.models.transformer import GraphTransformer
 from src.diffusion.noise_schedule import DiscreteUniformTransition, PredefinedNoiseScheduleDiscrete,\
@@ -291,28 +293,20 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                 samples_left_to_save -= to_save
                 samples_left_to_generate -= to_generate
                 chains_left_to_save -= chains_save
-            self._safe_print("Saving the generated graphs")
-            filename = f'generated_samples1.txt'
-            for i in range(2, 10):
-                if os.path.exists(filename):
-                    filename = f'generated_samples{i}.txt'
-                else:
-                    break
-            with open(filename, 'w') as f:
-                for item in samples:
-                    f.write(f"N={item[0].shape[0]}\n")
-                    atoms = item[0].tolist()
-                    f.write("X: \n")
-                    for at in atoms:
-                        f.write(f"{at} ")
-                    f.write("\n")
-                    f.write("E: \n")
-                    for bond_list in item[1]:
-                        for bond in bond_list:
-                            f.write(f"{bond} ")
-                        f.write("\n")
-                    f.write("\n")
-            self._safe_print("Generated graphs Saved. Computing sampling metrics...")
+            # Save generated samples to run directory
+            base_path = getattr(self, 'output_dir', os.getcwd())
+            samples_dir = os.path.join(base_path, 'generated_samples')
+            os.makedirs(samples_dir, exist_ok=True)
+
+            output_data = [
+                {'tree_id': f'generated_{i}', 'X': item[0].tolist(), 'E': item[1].tolist()}
+                for i, item in enumerate(samples)
+            ]
+            samples_path = os.path.join(samples_dir, 'samples.pkl')
+            with open(samples_path, 'wb') as f:
+                pickle.dump(output_data, f)
+            self._safe_print(f"Saved {len(samples)} samples to {samples_path}")
+            self._safe_print("Computing sampling metrics...")
             self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)
             self._safe_print("Done testing.")
 
@@ -654,8 +648,8 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
             edge_types = E[i, :n, :n].cpu()
             molecule_list.append([atom_types, edge_types])
 
-        # Visualize chains
-        if self.visualization_tools is not None:
+        # Visualize chains (only if keep_chain > 0)
+        if self.visualization_tools is not None and keep_chain > 0:
             self._safe_print('Visualizing chains...')
             # Use output_dir set by train.py, fallback to cwd
             base_path = getattr(self, 'output_dir', os.getcwd())
@@ -669,9 +663,12 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                                                                  chain_X[:, i, :].numpy(),
                                                                  chain_E[:, i, :].numpy())
                 self._safe_print('\r{}/{} complete'.format(i+1, num_molecules), end='')
-            self._safe_print('\nVisualizing molecules...')
+            self._safe_print('')  # newline after progress
 
-            # Visualize the final molecules
+        # Visualize final molecules (only if save_final > 0)
+        if self.visualization_tools is not None and save_final > 0:
+            self._safe_print('Visualizing molecules...')
+            base_path = getattr(self, 'output_dir', os.getcwd())
             result_path = os.path.join(base_path,
                                        f'graphs/epoch{self.current_epoch}_b{batch_id}/')
             self.visualization_tools.visualize(result_path, molecule_list, save_final)

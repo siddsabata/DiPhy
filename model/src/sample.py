@@ -1,13 +1,20 @@
 """
-sample.py - Generate phylogenetic graphs from a trained DiPhy model.
+sample.py - Run test phase on a trained DiPhy model.
+
+Loads a checkpoint, rebuilds the model from the run's Hydra config,
+and runs trainer.test() which computes test metrics and generates samples.
 
 Usage:
-    python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 100
-    python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 100 --compare
-    python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 500 --output_dir ./samples
+    python model/src/sample.py --checkpoint /path/to/checkpoints/best.ckpt
+    python model/src/sample.py --checkpoint /path/to/checkpoints/best.ckpt --device cpu
 
-Output directory defaults to 'generated_samples/' alongside the checkpoint's run directory.
-Use --compare to print statistics comparing generated samples against the test dataset.
+Output is saved to the run's directory (alongside the checkpoint):
+    /path/to/generated_samples/samples.pkl
+
+Sample counts are controlled by config values:
+    - general.final_model_samples_to_generate
+    - general.final_model_samples_to_save
+    - general.final_model_chains_to_save
 
 For SLURM:
     sbatch model/scripts/sample.slurm
@@ -16,9 +23,7 @@ For SLURM:
 import argparse
 import os
 import sys
-import pickle
 from pathlib import Path
-from typing import List, Tuple
 
 # Add model/ directory to path so 'src' is importable
 _MODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,6 +31,8 @@ if _MODEL_DIR not in sys.path:
     sys.path.insert(0, _MODEL_DIR)
 
 import torch
+from omegaconf import OmegaConf
+from pytorch_lightning import Trainer
 
 from src.datasets.phylo_dataset import PhyloGraphDataModule, PhyloDatasetInfos
 from src.analysis.visualization import NonMolecularVisualization
@@ -35,31 +42,51 @@ from src.diffusion.extra_features import DummyExtraFeatures
 from src.models.diffusion_model import DiscreteDenoisingDiffusion
 
 
-# Type alias for generated graphs
-GeneratedGraph = Tuple[torch.Tensor, torch.Tensor]  # (node_types, edge_types)
+def main():
+    parser = argparse.ArgumentParser(
+        description='Run test phase on a trained DiPhy model'
+    )
+    parser.add_argument(
+        '--checkpoint', type=str, required=True,
+        help='Path to trained model checkpoint (.ckpt)'
+    )
+    parser.add_argument(
+        '--device', type=str, default='cuda',
+        help='Device to use (cuda/cpu, default: cuda)'
+    )
+    args = parser.parse_args()
 
+    # Derive paths from checkpoint
+    checkpoint_path = Path(args.checkpoint).resolve()
+    run_dir = checkpoint_path.parent.parent  # .../checkpoints/best.ckpt -> .../
+    config_path = run_dir / '.hydra' / 'config.yaml'
 
-def load_model(checkpoint_path: str, device: str = 'cuda'):
-    """Load trained model from checkpoint.
+    print(f"[sample.py] Checkpoint: {checkpoint_path}")
+    print(f"[sample.py] Run directory: {run_dir}")
+    print(f"[sample.py] Config: {config_path}")
 
-    Args:
-        checkpoint_path: Path to the .ckpt file
-        device: Device to load model on ('cuda' or 'cpu')
+    # Load Hydra config from run directory
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config not found: {config_path}")
+    cfg = OmegaConf.load(config_path)
 
-    Returns:
-        model: Loaded DiscreteDenoisingDiffusion model
-        cfg: Configuration used during training
-        dataset_infos: Dataset information including node distribution
-        sampling_metrics: PhyloSamplingMetrics for comparing against test/val sets
-    """
-    print(f"[sample.py] Loading checkpoint: {checkpoint_path}")
+    # Validate dataset exists
+    data_path = cfg.dataset.data_path
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(
+            f"Dataset not found: {data_path}\n"
+            f"This checkpoint was trained with this dataset path. "
+            f"Ensure the dataset is accessible."
+        )
+    print(f"[sample.py] Dataset: {data_path}")
 
-    # Load checkpoint to get config
-    # weights_only=False needed because checkpoint contains OmegaConf DictConfig objects
-    checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
-    cfg = checkpoint['hyper_parameters']['cfg']
+    # Check device
+    use_gpu = args.device == 'cuda' and torch.cuda.is_available()
+    if args.device == 'cuda' and not torch.cuda.is_available():
+        print("[sample.py] CUDA not available, falling back to CPU")
+        use_gpu = False
 
-    # Rebuild model components with dataset stats for node distribution
+    # Build datamodule and model components
     datamodule = PhyloGraphDataModule(cfg)
     dataset_infos = PhyloDatasetInfos(datamodule, cfg.dataset)
 
@@ -71,215 +98,38 @@ def load_model(checkpoint_path: str, device: str = 'cuda'):
         domain_features=domain_features
     )
 
-    sampling_metrics = PhyloSamplingMetrics(datamodule)
-
     model_kwargs = {
         'dataset_infos': dataset_infos,
         'train_metrics': TrainAbstractMetricsDiscrete(),
-        'sampling_metrics': sampling_metrics,
+        'sampling_metrics': PhyloSamplingMetrics(datamodule),
         'visualization_tools': NonMolecularVisualization(),
         'extra_features': extra_features,
         'domain_features': domain_features,
     }
 
-    # Load the model from checkpoint
-    # weights_only=False needed because checkpoint contains OmegaConf DictConfig objects
+    # Load model from checkpoint
+    print(f"[sample.py] Loading model from checkpoint...")
     model = DiscreteDenoisingDiffusion.load_from_checkpoint(
-        checkpoint_path,
+        str(checkpoint_path),
         weights_only=False,
         **model_kwargs
     )
-    model.to(device)
-    model.eval()
+    model.output_dir = str(run_dir)  # For saving generated samples
 
-    return model, cfg, dataset_infos, sampling_metrics
-
-
-def generate_samples(
-    model: DiscreteDenoisingDiffusion,
-    num_samples: int,
-    batch_size: int = 16,
-    number_chain_steps: int = 50,
-) -> List[GeneratedGraph]:
-    """Generate graphs using the trained model.
-
-    Uses the learned node count distribution from the training data.
-
-    Args:
-        model: Trained diffusion model
-        num_samples: Total number of graphs to generate
-        batch_size: Batch size for generation
-        number_chain_steps: Number of chain steps to save for visualization
-
-    Returns:
-        List of (node_types, edge_types) tuples
-    """
-    all_samples = []
-    samples_remaining = num_samples
-    batch_id = 0
-
-    print(f"[sample.py] Generating {num_samples} samples...")
-
-    with torch.no_grad():
-        while samples_remaining > 0:
-            current_batch_size = min(batch_size, samples_remaining)
-
-            # sample_batch uses model.node_dist to sample node counts
-            # This distribution was learned from the training data
-            batch_samples = model.sample_batch(
-                batch_id=batch_id,
-                batch_size=current_batch_size,
-                num_nodes=None,  # Use learned distribution
-                save_final=0,    # Don't save visualizations
-                keep_chain=0,    # Don't keep chains
-                number_chain_steps=number_chain_steps,
-            )
-            all_samples.extend(batch_samples)
-
-            samples_remaining -= current_batch_size
-            batch_id += current_batch_size
-            print(f"  Generated {len(all_samples)}/{num_samples}", end='\r')
-
-    print(f"\n[sample.py] Generated {len(all_samples)} samples")
-    return all_samples
-
-
-def save_samples(
-    samples: List[GeneratedGraph],
-    output_path: str,
-    output_format: str = 'pickle'
-) -> None:
-    """Save generated samples to disk.
-
-    Args:
-        samples: List of (node_types, edge_types) tuples
-        output_path: Path to save the samples
-        output_format: 'pickle' or 'txt'
-    """
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    if output_format == 'pickle':
-        # Save as list of dicts matching input format
-        output_data = []
-        for i, (node_types, edge_types) in enumerate(samples):
-            output_data.append({
-                'tree_id': f'generated_{i}',
-                'X': node_types.cpu().numpy().tolist(),
-                'E': edge_types.cpu().numpy().tolist(),
-            })
-
-        with open(output_path, 'wb') as f:
-            pickle.dump(output_data, f)
-        print(f"[sample.py] Saved {len(samples)} samples to {output_path}")
-
-    elif output_format == 'txt':
-        with open(output_path, 'w') as f:
-            for i, (node_types, edge_types) in enumerate(samples):
-                f.write(f"# Sample {i}\n")
-                f.write(f"N={node_types.shape[0]}\n")
-                f.write("X: " + " ".join(map(str, node_types.cpu().tolist())) + "\n")
-                f.write("E:\n")
-                for row in edge_types.cpu().tolist():
-                    f.write(" ".join(map(str, row)) + "\n")
-                f.write("\n")
-        print(f"[sample.py] Saved {len(samples)} samples to {output_path}")
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description='Generate phylogenetic graphs from a trained DiPhy model'
-    )
-    parser.add_argument(
-        '--checkpoint', type=str, required=True,
-        help='Path to trained model checkpoint (.ckpt)'
-    )
-    parser.add_argument(
-        '--num_samples', type=int, default=100,
-        help='Number of graphs to generate (default: 100)'
-    )
-    parser.add_argument(
-        '--batch_size', type=int, default=16,
-        help='Batch size for sampling (default: 16)'
-    )
-    parser.add_argument(
-        '--output_dir', type=str, default=None,
-        help='Directory to save generated samples (default: alongside checkpoint)'
-    )
-    parser.add_argument(
-        '--compare', action='store_true',
-        help='Compare generated samples against test dataset'
-    )
-    parser.add_argument(
-        '--output_format', type=str, default='pickle',
-        choices=['pickle', 'txt'],
-        help='Output format for samples (default: pickle)'
-    )
-    parser.add_argument(
-        '--device', type=str, default='cuda',
-        help='Device to use (cuda/cpu, default: cuda)'
-    )
-    parser.add_argument(
-        '--seed', type=int, default=None,
-        help='Random seed for reproducibility'
+    # Build trainer
+    trainer = Trainer(
+        accelerator='gpu' if use_gpu else 'cpu',
+        devices=1,
+        logger=False,  # No logging during test
+        enable_progress_bar=True,
     )
 
-    args = parser.parse_args()
+    # Run test phase
+    print(f"[sample.py] Running test phase...")
+    print(f"[sample.py] Will generate {cfg.general.final_model_samples_to_generate} samples")
+    trainer.test(model, datamodule=datamodule)
 
-    # Set seed if provided
-    if args.seed is not None:
-        torch.manual_seed(args.seed)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed_all(args.seed)
-        print(f"[sample.py] Using random seed: {args.seed}")
-
-    # Check device
-    if args.device == 'cuda' and not torch.cuda.is_available():
-        print("[sample.py] CUDA not available, falling back to CPU")
-        args.device = 'cpu'
-
-    # Derive output directory from checkpoint path if not specified
-    if args.output_dir is None:
-        checkpoint_path = Path(args.checkpoint).resolve()
-        # Checkpoint is typically at .../outputs/date/time/checkpoints/best.ckpt
-        # We want .../outputs/date/time/generated_samples
-        run_dir = checkpoint_path.parent.parent
-        args.output_dir = str(run_dir / 'generated_samples')
-        print(f"[sample.py] Output directory: {args.output_dir}")
-
-    # Load model
-    model, cfg, dataset_infos, sampling_metrics = load_model(args.checkpoint, device=args.device)
-
-    # Print dataset statistics being used
-    print(f"[sample.py] Using node count distribution from training data")
-    print(f"[sample.py] Max nodes in distribution: {dataset_infos.max_n_nodes}")
-
-    # Generate samples
-    samples = generate_samples(
-        model=model,
-        num_samples=args.num_samples,
-        batch_size=args.batch_size,
-    )
-
-    # Compare against test dataset if requested
-    if args.compare:
-        print(f"[sample.py] Comparing against test dataset...")
-        sampling_metrics.forward(
-            samples,
-            name='inference',
-            current_epoch=0,
-            val_counter=0,
-            local_rank=0,
-            test=True
-        )
-
-    # Save samples
-    ext = 'pkl' if args.output_format == 'pickle' else 'txt'
-    output_filename = f'samples_{args.num_samples}.{ext}'
-    output_path = Path(args.output_dir) / output_filename
-    save_samples(samples, output_path, output_format=args.output_format)
-
-    print(f"[sample.py] Done!")
+    print(f"[sample.py] Done! Samples saved to: {run_dir / 'generated_samples'}")
 
 
 if __name__ == '__main__':
