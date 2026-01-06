@@ -651,26 +651,30 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         # Visualize chains (only if keep_chain > 0)
         if self.visualization_tools is not None and keep_chain > 0:
             self._safe_print('Visualizing chains...')
-            # Use output_dir set by train.py, fallback to cwd
             base_path = getattr(self, 'output_dir', os.getcwd())
             num_molecules = chain_X.size(1)       # number of molecules
             for i in range(num_molecules):
-                result_path = os.path.join(base_path, f'chains/epoch{self.current_epoch}/'
-                                                      f'molecule_{batch_id + i}')
-                if not os.path.exists(result_path):
-                    os.makedirs(result_path)
-                    _ = self.visualization_tools.visualize_chain(result_path,
-                                                                 chain_X[:, i, :].numpy(),
-                                                                 chain_E[:, i, :].numpy())
-                self._safe_print('\r{}/{} complete'.format(i+1, num_molecules), end='')
+                # Use generated_samples/chains/ for test-time, chains/epoch{}/ for training
+                if self.trainer is None or self.trainer.testing:
+                    result_path = os.path.join(base_path, f'generated_samples/chains/molecule_{batch_id + i}')
+                else:
+                    result_path = os.path.join(base_path, f'chains/epoch{self.current_epoch}/molecule_{batch_id + i}')
+                os.makedirs(result_path, exist_ok=True)
+                _ = self.visualization_tools.visualize_chain(result_path,
+                                                             chain_X[:, i, :].numpy(),
+                                                             chain_E[:, i, :].numpy())
+                self._safe_print(f'\r{i+1}/{num_molecules} complete', end='')
             self._safe_print('')  # newline after progress
 
         # Visualize final molecules (only if save_final > 0)
         if self.visualization_tools is not None and save_final > 0:
             self._safe_print('Visualizing molecules...')
             base_path = getattr(self, 'output_dir', os.getcwd())
-            result_path = os.path.join(base_path,
-                                       f'graphs/epoch{self.current_epoch}_b{batch_id}/')
+            # Use generated_samples/graphs/ for test-time, graphs/epoch{}/ for training
+            if self.trainer is None or self.trainer.testing:
+                result_path = os.path.join(base_path, 'generated_samples/graphs/')
+            else:
+                result_path = os.path.join(base_path, f'graphs/epoch{self.current_epoch}_b{batch_id}/')
             self.visualization_tools.visualize(result_path, molecule_list, save_final)
             self._safe_print("Done.")
 
