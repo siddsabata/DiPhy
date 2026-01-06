@@ -3,8 +3,11 @@ sample.py - Generate phylogenetic graphs from a trained DiPhy model.
 
 Usage:
     python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 100
+    python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 100 --compare
     python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 500 --output_dir ./samples
-    python model/src/sample.py --checkpoint /path/to/checkpoint.ckpt --num_samples 100 --batch_size 16
+
+Output directory defaults to 'generated_samples/' alongside the checkpoint's run directory.
+Use --compare to print statistics comparing generated samples against the test dataset.
 
 For SLURM:
     sbatch model/scripts/sample.slurm
@@ -47,6 +50,7 @@ def load_model(checkpoint_path: str, device: str = 'cuda'):
         model: Loaded DiscreteDenoisingDiffusion model
         cfg: Configuration used during training
         dataset_infos: Dataset information including node distribution
+        sampling_metrics: PhyloSamplingMetrics for comparing against test/val sets
     """
     print(f"[sample.py] Loading checkpoint: {checkpoint_path}")
 
@@ -67,10 +71,12 @@ def load_model(checkpoint_path: str, device: str = 'cuda'):
         domain_features=domain_features
     )
 
+    sampling_metrics = PhyloSamplingMetrics(datamodule)
+
     model_kwargs = {
         'dataset_infos': dataset_infos,
         'train_metrics': TrainAbstractMetricsDiscrete(),
-        'sampling_metrics': PhyloSamplingMetrics(datamodule),
+        'sampling_metrics': sampling_metrics,
         'visualization_tools': NonMolecularVisualization(),
         'extra_features': extra_features,
         'domain_features': domain_features,
@@ -86,7 +92,7 @@ def load_model(checkpoint_path: str, device: str = 'cuda'):
     model.to(device)
     model.eval()
 
-    return model, cfg, dataset_infos
+    return model, cfg, dataset_infos, sampling_metrics
 
 
 def generate_samples(
@@ -197,8 +203,12 @@ def main():
         help='Batch size for sampling (default: 16)'
     )
     parser.add_argument(
-        '--output_dir', type=str, default='./generated_samples',
-        help='Directory to save generated samples (default: ./generated_samples)'
+        '--output_dir', type=str, default=None,
+        help='Directory to save generated samples (default: alongside checkpoint)'
+    )
+    parser.add_argument(
+        '--compare', action='store_true',
+        help='Compare generated samples against test dataset'
     )
     parser.add_argument(
         '--output_format', type=str, default='pickle',
@@ -228,8 +238,17 @@ def main():
         print("[sample.py] CUDA not available, falling back to CPU")
         args.device = 'cpu'
 
+    # Derive output directory from checkpoint path if not specified
+    if args.output_dir is None:
+        checkpoint_path = Path(args.checkpoint).resolve()
+        # Checkpoint is typically at .../outputs/date/time/checkpoints/best.ckpt
+        # We want .../outputs/date/time/generated_samples
+        run_dir = checkpoint_path.parent.parent
+        args.output_dir = str(run_dir / 'generated_samples')
+        print(f"[sample.py] Output directory: {args.output_dir}")
+
     # Load model
-    model, cfg, dataset_infos = load_model(args.checkpoint, device=args.device)
+    model, cfg, dataset_infos, sampling_metrics = load_model(args.checkpoint, device=args.device)
 
     # Print dataset statistics being used
     print(f"[sample.py] Using node count distribution from training data")
@@ -241,6 +260,18 @@ def main():
         num_samples=args.num_samples,
         batch_size=args.batch_size,
     )
+
+    # Compare against test dataset if requested
+    if args.compare:
+        print(f"[sample.py] Comparing against test dataset...")
+        sampling_metrics.forward(
+            samples,
+            name='inference',
+            current_epoch=0,
+            val_counter=0,
+            local_rank=0,
+            test=True
+        )
 
     # Save samples
     ext = 'pkl' if args.output_format == 'pickle' else 'txt'
