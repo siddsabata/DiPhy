@@ -45,8 +45,8 @@ class PhyloGraphDataset(Dataset):
         if not self._data_path.exists():
             raise FileNotFoundError(f"Dataset file not found: {self._data_path}")
 
-        # Create cache directory next to the data file
-        self._cache_dir = self._data_path.parent / ".processed"
+        # Create cache directory next to the data file, named after the pkl file
+        self._cache_dir = self._data_path.parent / self._data_path.stem
 
         self.num_node_types = 3  # 0 = root, 1 = clone, 2 = mutation
         self.num_edge_types = 3  # 0 = no edge, 1 = clone edge, 2 = mutation edge
