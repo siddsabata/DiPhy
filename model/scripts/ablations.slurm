@@ -2,7 +2,7 @@
 #SBATCH -A cis250063p
 #SBATCH -p GPU-shared
 #SBATCH --gpus=h100-80:1
-#SBATCH --time=24:00:00
+#SBATCH --time=44:00:00
 #SBATCH --mem=48G
 #SBATCH --array=0-8
 #SBATCH --output=ablation_%A_%a.out
@@ -36,19 +36,16 @@ case $SLURM_ARRAY_TASK_ID in
         NAME="data_small_model_small"
         DATA="model/data/subset_25.pkl"
         LAYERS=6
-        DX=128
         ;;
     1)
         NAME="data_small_model_medium"
         DATA="model/data/subset_25.pkl"
         LAYERS=9
-        DX=256
         ;;
     2)
         NAME="data_small_model_large"
         DATA="model/data/subset_25.pkl"
         LAYERS=12
-        DX=384
         ;;
 
     # --- Dataset: Medium ---
@@ -56,19 +53,16 @@ case $SLURM_ARRAY_TASK_ID in
         NAME="data_medium_model_small"
         DATA="model/data/subset_50.pkl"
         LAYERS=6
-        DX=128
         ;;
     4)
         NAME="data_medium_model_medium"
         DATA="model/data/subset_50.pkl"
         LAYERS=9
-        DX=256
         ;;
     5)
         NAME="data_medium_model_large"
         DATA="model/data/subset_50.pkl"
         LAYERS=12
-        DX=384
         ;;
 
     # --- Dataset: Large ---
@@ -76,19 +70,16 @@ case $SLURM_ARRAY_TASK_ID in
         NAME="data_large_model_small"
         DATA="model/data/main_filtered.pkl"
         LAYERS=6
-        DX=128
         ;;
     7)
         NAME="data_large_model_medium"
         DATA="model/data/main_filtered.pkl"
         LAYERS=9
-        DX=256
         ;;
     8)
         NAME="data_large_model_large"
         DATA="model/data/main_filtered.pkl"
         LAYERS=12
-        DX=384
         ;;
 esac
 
@@ -107,7 +98,6 @@ OUTPUT=$(python model/src/train.py \
     general.name="${NAME}" \
     dataset.data_path="${DATA}" \
     model.n_layers="${LAYERS}" \
-    model.hidden_dims.dx="${DX}" \
     2>&1 | tee /dev/stderr)
 
 # ==============================================================================
