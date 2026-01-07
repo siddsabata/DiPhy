@@ -12,7 +12,7 @@
 # DiPhy Ablation Study - 9 Jobs (3 datasets x 3 model sizes)
 # ==============================================================================
 # Before submitting, pre-process all datasets:
-#   python model/src/preprocess.py model/data/subset_25.pkl model/data/subset_50.pkl model/data/main_filtered.pkl
+#   python model/src/preprocess.py model/data/subset_30.pkl model/data/subset_60.pkl model/data/main_filtered.pkl
 #
 # Submit with:
 #   sbatch model/scripts/ablations.slurm
@@ -31,62 +31,71 @@ export WANDB_API_KEY="${WANDB_API_KEY:-<your_key>}"
 # ==============================================================================
 
 case $SLURM_ARRAY_TASK_ID in
-    # --- Dataset: Small ---
+    # --- Dataset: Small (30%) ---
     0)
         NAME="data_small_model_small"
-        DATA="model/data/subset_25.pkl"
-        LAYERS=6
+        DATA="model/data/subset_30.pkl"
+        LAYERS=9
+        BATCH=28
         ;;
     1)
         NAME="data_small_model_medium"
-        DATA="model/data/subset_25.pkl"
-        LAYERS=9
+        DATA="model/data/subset_30.pkl"
+        LAYERS=18
+        BATCH=14
         ;;
     2)
         NAME="data_small_model_large"
-        DATA="model/data/subset_25.pkl"
-        LAYERS=12
+        DATA="model/data/subset_30.pkl"
+        LAYERS=36
+        BATCH=7
         ;;
 
-    # --- Dataset: Medium ---
+    # --- Dataset: Medium (60%) ---
     3)
         NAME="data_medium_model_small"
-        DATA="model/data/subset_50.pkl"
-        LAYERS=6
+        DATA="model/data/subset_60.pkl"
+        LAYERS=9
+        BATCH=28
         ;;
     4)
         NAME="data_medium_model_medium"
-        DATA="model/data/subset_50.pkl"
-        LAYERS=9
+        DATA="model/data/subset_60.pkl"
+        LAYERS=18
+        BATCH=14
         ;;
     5)
         NAME="data_medium_model_large"
-        DATA="model/data/subset_50.pkl"
-        LAYERS=12
+        DATA="model/data/subset_60.pkl"
+        LAYERS=36
+        BATCH=7
         ;;
 
-    # --- Dataset: Large ---
+    # --- Dataset: Large (100%) ---
     6)
         NAME="data_large_model_small"
         DATA="model/data/main_filtered.pkl"
-        LAYERS=6
+        LAYERS=9
+        BATCH=28
         ;;
     7)
         NAME="data_large_model_medium"
         DATA="model/data/main_filtered.pkl"
-        LAYERS=9
+        LAYERS=18
+        BATCH=14
         ;;
     8)
         NAME="data_large_model_large"
         DATA="model/data/main_filtered.pkl"
-        LAYERS=12
+        LAYERS=36
+        BATCH=7
         ;;
 esac
 
 echo "=============================================="
 echo "Job $SLURM_ARRAY_TASK_ID: $NAME"
 echo "  Dataset: $DATA"
-echo "  Layers: $LAYERS, dx: $DX"
+echo "  Layers: $LAYERS, Batch: $BATCH"
 echo "=============================================="
 
 # ==============================================================================
@@ -98,6 +107,7 @@ OUTPUT=$(python model/src/train.py \
     general.name="${NAME}" \
     dataset.data_path="${DATA}" \
     model.n_layers="${LAYERS}" \
+    train.batch_size="${BATCH}" \
     2>&1 | tee /dev/stderr)
 
 # ==============================================================================
