@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
-"""Filter an existing dataset pickle by node count.
+"""Filter an existing dataset pickle by node count and tree validity.
 
 Use this to filter already-built pickle files. For new builds, prefer using
 the --max-nodes flag in build_dataset.py.
 
+Filters:
+- Node count: Trees with more than --max-nodes are removed.
+- Validity: Trees that fail structural validity checks are removed (enabled by default).
+  Validity checks include: no cycles in clone subgraph, root has exactly one clone
+  neighbor, clone edges only connect root/clone nodes, mutation edges only connect
+  clone-mutation pairs.
+
 Usage:
     python filter_dataset.py --input data.pkl --output filtered.pkl --max-nodes 200
+    python filter_dataset.py --input data.pkl --output filtered.pkl --no-filter-invalid
 """
 
 from __future__ import annotations
@@ -15,6 +23,8 @@ import pickle
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
+
+from tree_metrics import compute_tree_metrics
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,6 +53,18 @@ def parse_args() -> argparse.Namespace:
         "--stats-only",
         action="store_true",
         help="Only print statistics, don't write output file",
+    )
+    parser.add_argument(
+        "--filter-invalid",
+        action="store_true",
+        default=True,
+        help="Filter out trees that fail validity checks (default: True)",
+    )
+    parser.add_argument(
+        "--no-filter-invalid",
+        action="store_false",
+        dest="filter_invalid",
+        help="Disable validity filtering",
     )
     return parser.parse_args()
 
@@ -80,30 +102,59 @@ def main() -> None:
     kept: List[Dict] = []
     kept_counts: Dict[str, int] = defaultdict(int)
     filtered_counts: Dict[str, int] = defaultdict(int)
+    invalid_counts: Dict[str, int] = defaultdict(int)
 
     for tree in dataset:
         num_nodes = len(tree["X"])
         regime = get_regime_from_tree_id(tree.get("tree_id", "unknown"))
 
+        # Check max nodes
         if num_nodes > max_nodes:
             filtered_counts[regime] += 1
-        else:
-            kept.append(tree)
-            kept_counts[regime] += 1
+            continue
+
+        # Check validity if enabled
+        if args.filter_invalid:
+            metrics = compute_tree_metrics(tree)
+            if not metrics.validity.is_valid:
+                invalid_counts[regime] += 1
+                continue
+
+        kept.append(tree)
+        kept_counts[regime] += 1
 
     total_kept = len(kept)
-    total_filtered = len(dataset) - total_kept
+    total_size_filtered = sum(filtered_counts.values())
+    total_invalid = sum(invalid_counts.values())
 
-    print(f"\nFiltering with max_nodes={max_nodes}:")
-    print("\nCounts by regime (kept / filtered):")
-    all_regimes = sorted(set(kept_counts.keys()) | set(filtered_counts.keys()))
-    for regime in all_regimes:
-        k = kept_counts[regime]
-        f = filtered_counts[regime]
-        print(f"  {regime}: {k} kept / {f} filtered")
+    print(f"\nFiltering with max_nodes={max_nodes}, filter_invalid={args.filter_invalid}:")
+    all_regimes = sorted(
+        set(kept_counts.keys()) | set(filtered_counts.keys()) | set(invalid_counts.keys())
+    )
 
-    pct = total_filtered / len(dataset) * 100 if dataset else 0
-    print(f"\nTotal: {total_kept} kept / {total_filtered} filtered ({pct:.1f}% removed)")
+    if args.filter_invalid:
+        print("\nCounts by regime (kept / size-filtered / invalid):")
+        for regime in all_regimes:
+            k = kept_counts[regime]
+            f = filtered_counts[regime]
+            inv = invalid_counts[regime]
+            print(f"  {regime}: {k} kept / {f} size-filtered / {inv} invalid")
+    else:
+        print("\nCounts by regime (kept / size-filtered):")
+        for regime in all_regimes:
+            k = kept_counts[regime]
+            f = filtered_counts[regime]
+            print(f"  {regime}: {k} kept / {f} size-filtered")
+
+    pct_size = total_size_filtered / len(dataset) * 100 if dataset else 0
+    if args.filter_invalid:
+        pct_invalid = total_invalid / len(dataset) * 100 if dataset else 0
+        print(
+            f"\nTotal: {total_kept} kept / {total_size_filtered} size-filtered ({pct_size:.1f}%) / "
+            f"{total_invalid} invalid ({pct_invalid:.1f}%)"
+        )
+    else:
+        print(f"\nTotal: {total_kept} kept / {total_size_filtered} size-filtered ({pct_size:.1f}%)")
 
     if args.stats_only:
         print("\n--stats-only: No output file written")
