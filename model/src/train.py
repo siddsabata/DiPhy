@@ -48,6 +48,20 @@ from src.models.diffusion_model import DiscreteDenoisingDiffusion
 warnings.filterwarnings("ignore", category=PossibleUserWarning)
 
 
+# Register custom resolver for unique run IDs (must be before @hydra.main)
+def _generate_run_id():
+    """Generate a 2-character alphanumeric ID based on current time."""
+    import time
+    import random
+    # Use microseconds as seed for uniqueness even within same second
+    seed = int(time.time() * 1_000_000)
+    rng = random.Random(seed)
+    chars = '0123456789abcdefghijklmnopqrstuvwxyz'
+    return ''.join(rng.choices(chars, k=2))
+
+OmegaConf.register_new_resolver("run_id", _generate_run_id, replace=True)
+
+
 def setup_model(cfg: DictConfig):
     """Initialize datamodule, model, and all required components."""
     # Initialize data module

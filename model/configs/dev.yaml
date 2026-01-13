@@ -60,3 +60,7 @@ dataset:
     - 0.1
     - 0.1
   split_seed: 0
+
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${run_id:}-${general.name}
