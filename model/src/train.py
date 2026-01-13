@@ -222,7 +222,8 @@ def main(cfg: DictConfig):
         print_rank_zero(f"[train.py] Resuming from checkpoint: {ckpt_path}")
 
     # Train (no automatic test phase)
-    trainer.fit(model, datamodule=datamodule, ckpt_path=ckpt_path)
+    # weights_only=False needed for PyTorch 2.6+ to load omegaconf objects in checkpoint
+    trainer.fit(model, datamodule=datamodule, ckpt_path=ckpt_path, weights_only=False)
 
     print_rank_zero(f"\n[train.py] Training complete!")
     print_rank_zero(f"[train.py] Checkpoints saved to: {os.path.join(output_dir, 'checkpoints')}")
