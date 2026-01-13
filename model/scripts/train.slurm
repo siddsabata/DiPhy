@@ -6,6 +6,7 @@
 #SBATCH --mem=48G
 #SBATCH --output=train_%j.out
 #SBATCH --error=train_%j.err
+#SBATCH --signal=SIGUSR1@120  # Signal 120 seconds before time limit for graceful shutdown
 
 # ==============================================================================
 # DiPhy Training Script
@@ -36,6 +37,25 @@ source .venv/bin/activate
 export WANDB_API_KEY="${WANDB_API_KEY:-<your_wandb_api_key>}"
 
 # --- Run Training ---
-python model/src/train.py \
-    --config-name="${CONFIG_NAME}" \
-    general.gpus=4
+# Fresh run:
+#   sbatch model/scripts/train.slurm
+#
+# Resume from checkpoint (pass CKPT env var):
+#   sbatch --export=ALL,CKPT=/path/to/checkpoints/last.ckpt model/scripts/train.slurm
+
+if [ -n "${CKPT}" ]; then
+    # Resume mode: derive run_dir from checkpoint path
+    RUN_DIR=$(dirname $(dirname "${CKPT}"))
+    echo "Resuming from: ${CKPT}"
+    echo "Output dir: ${RUN_DIR}"
+    python model/src/train.py \
+        --config-name="${CONFIG_NAME}" \
+        train.resume_from_checkpoint="${CKPT}" \
+        hydra.run.dir="${RUN_DIR}" \
+        general.gpus=4
+else
+    # Fresh start
+    python model/src/train.py \
+        --config-name="${CONFIG_NAME}" \
+        general.gpus=4
+fi

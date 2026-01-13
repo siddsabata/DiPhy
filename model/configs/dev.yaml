@@ -51,6 +51,7 @@ train:
   seed: 42
   log_gpu_memory: true  # Log GPU memory usage each epoch
   checkpoint_every_n_epochs: 1  # Save every epoch for dev
+  resume_from_checkpoint: null  # Path to checkpoint, or "auto" to find last.ckpt
 
 dataset:
   data_path: model/data/dev.pkl

@@ -13,6 +13,7 @@ For SLURM:
 import os
 import sys
 import warnings
+from typing import Optional
 
 # Add model/ directory to path so 'src' is importable
 _MODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -129,6 +130,47 @@ def build_callbacks(cfg: DictConfig, output_dir: str):
     return callbacks
 
 
+def get_resume_checkpoint(cfg: DictConfig, output_dir: str) -> Optional[str]:
+    """Determine checkpoint path for resumption.
+
+    Args:
+        cfg: Hydra config with train.resume_from_checkpoint option
+        output_dir: Current run's output directory
+
+    Returns:
+        Path to checkpoint file if resuming, None otherwise
+    """
+    resume_path = getattr(cfg.train, 'resume_from_checkpoint', None)
+
+    if resume_path is None:
+        return None
+
+    if resume_path == "auto":
+        # Look for last.ckpt in the current output directory
+        last_ckpt = os.path.join(output_dir, "checkpoints", "last.ckpt")
+        if os.path.exists(last_ckpt):
+            return last_ckpt
+        print_rank_zero(f"[train.py] No last.ckpt found at {last_ckpt}, starting fresh")
+        return None
+
+    # Explicit path provided
+    if not os.path.exists(resume_path):
+        raise FileNotFoundError(f"Checkpoint not found: {resume_path}")
+
+    # Derive expected run directory from checkpoint path
+    # /path/run/checkpoints/last.ckpt → /path/run/
+    expected_run_dir = os.path.dirname(os.path.dirname(os.path.abspath(resume_path)))
+
+    if os.path.realpath(output_dir) != os.path.realpath(expected_run_dir):
+        print_rank_zero(f"[WARNING] Output directory mismatch when resuming!")
+        print_rank_zero(f"  Checkpoint's run dir: {expected_run_dir}")
+        print_rank_zero(f"  Current output dir:   {output_dir}")
+        print_rank_zero(f"  To keep outputs together, add:")
+        print_rank_zero(f"    hydra.run.dir={expected_run_dir}")
+
+    return resume_path
+
+
 @hydra.main(version_base='1.3', config_path='../configs', config_name='config')
 def main(cfg: DictConfig):
     """Main training entry point."""
@@ -174,8 +216,13 @@ def main(cfg: DictConfig):
         logger=wandb_logger if wandb_logger else [],
     )
 
+    # Check for checkpoint to resume from
+    ckpt_path = get_resume_checkpoint(cfg, output_dir)
+    if ckpt_path:
+        print_rank_zero(f"[train.py] Resuming from checkpoint: {ckpt_path}")
+
     # Train (no automatic test phase)
-    trainer.fit(model, datamodule=datamodule)
+    trainer.fit(model, datamodule=datamodule, ckpt_path=ckpt_path)
 
     print_rank_zero(f"\n[train.py] Training complete!")
     print_rank_zero(f"[train.py] Checkpoints saved to: {os.path.join(output_dir, 'checkpoints')}")
