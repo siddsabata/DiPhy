@@ -146,10 +146,11 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
 
     def on_train_epoch_end(self) -> None:
         to_log = self.train_loss.log_epoch_metrics()
+        epoch_time = f" -- {time.time() - self.start_epoch_time:.1f}s" if self.start_epoch_time else ""
         self._safe_print(f"Epoch {self.current_epoch}: X_CE: {to_log['train_epoch/x_CE'] :.3f}"
                       f" -- E_CE: {to_log['train_epoch/E_CE'] :.3f} --"
                       f" y_CE: {to_log['train_epoch/y_CE'] :.3f}"
-                      f" -- {time.time() - self.start_epoch_time:.1f}s ")
+                      f"{epoch_time}")
 
         # Log train metrics to W&B via Lightning's logger
         if self.logger:
