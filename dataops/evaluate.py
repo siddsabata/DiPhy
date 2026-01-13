@@ -335,14 +335,20 @@ def compute_mmd_ratio(
     Returns:
         (mmd_ratio, mmd_gen_test, mmd_train_test)
     """
-    # Use consistent bandwidth across both calculations
-    all_feats = np.vstack([gen_feats, train_feats, test_feats])
-    bandwidth = median_heuristic_bandwidth(all_feats, all_feats)
+    # Compute bandwidth from train + test only for stable baseline
+    # This ensures MMD²(train, test) is identical across runs with same dataset
+    baseline_feats = np.vstack([train_feats, test_feats])
+    bandwidth = median_heuristic_bandwidth(baseline_feats, baseline_feats)
 
     mmd_gen_test = compute_mmd_squared(gen_feats, test_feats, bandwidth)
     mmd_train_test = compute_mmd_squared(train_feats, test_feats, bandwidth)
 
-    # Avoid division by zero
+    # Clamp to non-negative (unbiased estimator can be slightly negative when
+    # distributions are nearly identical due to sampling variance)
+    mmd_gen_test = max(0.0, mmd_gen_test)
+    mmd_train_test = max(0.0, mmd_train_test)
+
+    # Compute ratio, handling zero denominator
     if mmd_train_test < 1e-10:
         ratio = float("inf") if mmd_gen_test > 1e-10 else 1.0
     else:
