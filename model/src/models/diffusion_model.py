@@ -1,3 +1,4 @@
+import gc
 import os
 import pickle
 import time
@@ -234,10 +235,21 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                 samples_left_to_save -= to_save
                 samples_left_to_generate -= to_generate
                 chains_left_to_save -= chains_save
+
+                # Free GPU memory after each batch to prevent fragmentation
+                torch.cuda.empty_cache()
+                gc.collect()
+
             self._safe_print("Computing sampling metrics...")
             self.sampling_metrics.forward(samples, self.name, self.current_epoch, val_counter=-1, test=False,
                                           local_rank=self.local_rank)
             self._safe_print(f'Done. Sampling took {time.time() - start:.2f} seconds\n')
+
+            # Final memory cleanup after validation sampling
+            del samples
+            gc.collect()
+            torch.cuda.empty_cache()
+
             print("Validation epoch end ends...")
 
     def on_test_epoch_start(self) -> None:
@@ -294,6 +306,11 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                 samples_left_to_save -= to_save
                 samples_left_to_generate -= to_generate
                 chains_left_to_save -= chains_save
+
+                # Free GPU memory after each batch to prevent fragmentation
+                torch.cuda.empty_cache()
+                gc.collect()
+
             # Save generated samples to run directory
             base_path = getattr(self, 'output_dir', os.getcwd())
             samples_dir = os.path.join(base_path, 'generated_samples')
@@ -311,6 +328,10 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
             self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)
             self._safe_print("Done testing.")
 
+            # Final memory cleanup after test sampling
+            del samples
+            gc.collect()
+            torch.cuda.empty_cache()
 
     def kl_prior(self, X, E, node_mask):
         """Computes the KL between q(z1 | x) and the prior p(z1) = Normal(0, 1).
@@ -666,6 +687,11 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                                                              chain_E[:, i, :].numpy())
                 self._safe_print(f'\r{i+1}/{num_molecules} complete', end='')
             self._safe_print('')  # newline after progress
+
+            # Free chain tensors after visualization
+            del chain_X, chain_E
+            gc.collect()
+            torch.cuda.empty_cache()
 
         # Visualize final molecules (only if save_final > 0)
         if self.visualization_tools is not None and save_final > 0:
