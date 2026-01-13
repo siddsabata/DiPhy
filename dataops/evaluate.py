@@ -325,6 +325,16 @@ def metrics_to_feature_matrix(metrics: Sequence[EvalMetrics]) -> np.ndarray:
     return features
 
 
+def subsample_features(
+    feats: np.ndarray, max_samples: int, rng: np.random.Generator
+) -> np.ndarray:
+    """Randomly subsample feature matrix if it exceeds max_samples."""
+    if max_samples <= 0 or feats.shape[0] <= max_samples:
+        return feats
+    indices = rng.choice(feats.shape[0], size=max_samples, replace=False)
+    return feats[indices]
+
+
 def compute_mmd_ratio(
     gen_feats: np.ndarray,
     train_feats: np.ndarray,
@@ -535,6 +545,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print detailed per-metric statistics",
     )
+    parser.add_argument(
+        "--mmd-subsample",
+        type=int,
+        default=1000,
+        help="Max samples per set for MMD computation (default: 1000, 0 to disable)",
+    )
     return parser.parse_args()
 
 
@@ -595,6 +611,17 @@ def main() -> None:
     gen_feats = metrics_to_feature_matrix(gen_eval_metrics)
     train_feats = metrics_to_feature_matrix(train_eval_metrics)
     test_feats = metrics_to_feature_matrix(test_eval_metrics)
+
+    # Subsample for memory efficiency (kernel matrices are O(n²))
+    if args.mmd_subsample > 0:
+        rng = np.random.default_rng(seed=42)  # Fixed seed for reproducibility
+        orig_sizes = (gen_feats.shape[0], train_feats.shape[0], test_feats.shape[0])
+        gen_feats = subsample_features(gen_feats, args.mmd_subsample, rng)
+        train_feats = subsample_features(train_feats, args.mmd_subsample, rng)
+        test_feats = subsample_features(test_feats, args.mmd_subsample, rng)
+        new_sizes = (gen_feats.shape[0], train_feats.shape[0], test_feats.shape[0])
+        if orig_sizes != new_sizes:
+            print(f"  Subsampled for MMD: gen={new_sizes[0]}, train={new_sizes[1]}, test={new_sizes[2]}")
 
     mmd_ratio, mmd_gen_test, mmd_train_test = compute_mmd_ratio(
         gen_feats, train_feats, test_feats
