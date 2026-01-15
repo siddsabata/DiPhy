@@ -335,6 +335,27 @@ def subsample_features(
     return feats[indices]
 
 
+def standardize_features(
+    *feature_arrays: np.ndarray,
+) -> tuple[np.ndarray, ...]:
+    """Z-score standardize features using combined statistics.
+
+    Computes mean and std from all arrays combined, then applies
+    standardization to each array individually.
+
+    Args:
+        *feature_arrays: Variable number of (n, d) feature matrices
+
+    Returns:
+        Tuple of standardized feature matrices (same shapes as inputs)
+    """
+    combined = np.vstack(feature_arrays)
+    mean = combined.mean(axis=0)
+    std = combined.std(axis=0)
+    std[std == 0] = 1.0  # Avoid division by zero
+    return tuple((arr - mean) / std for arr in feature_arrays)
+
+
 def compute_mmd_ratio(
     gen_feats: np.ndarray,
     train_feats: np.ndarray,
@@ -342,9 +363,17 @@ def compute_mmd_ratio(
 ) -> tuple[float, float, float]:
     """Compute MMD ratio: MMD^2(gen, test) / MMD^2(train, test).
 
+    Features are z-score standardized using combined statistics before
+    computing MMD to ensure equal weighting across all feature dimensions.
+
     Returns:
         (mmd_ratio, mmd_gen_test, mmd_train_test)
     """
+    # Standardize features using combined statistics
+    gen_feats, train_feats, test_feats = standardize_features(
+        gen_feats, train_feats, test_feats
+    )
+
     # Compute bandwidth from train + test only for stable baseline
     # This ensures MMD²(train, test) is identical across runs with same dataset
     baseline_feats = np.vstack([train_feats, test_feats])
@@ -425,6 +454,15 @@ def load_split_tree_ids(json_path: Path) -> set[str]:
             tree_ids.add(tree_id)
 
     return tree_ids
+
+
+def infer_split_path(original_data: Path, split_name: str) -> Path:
+    """Infer split JSON path from original data path.
+
+    Convention: for data at /path/to/data.pkl, splits are at /path/to/data/{split}_index.json
+    """
+    cache_dir = original_data.parent / original_data.stem
+    return cache_dir / f"{split_name}_index.json"
 
 
 def filter_trees_by_ids(
@@ -519,8 +557,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--train-split",
         type=Path,
-        required=True,
-        help="Path to train split JSON file (contains tree_ids)",
+        default=None,
+        help="Path to train split JSON file (inferred from --original-data if not provided)",
     )
     parser.add_argument(
         "--val-split",
@@ -531,8 +569,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--test-split",
         type=Path,
-        required=True,
-        help="Path to test split JSON file (contains tree_ids)",
+        default=None,
+        help="Path to test split JSON file (inferred from --original-data if not provided)",
     )
     parser.add_argument(
         "--output",
@@ -557,11 +595,19 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    # Validate paths
+    # Validate required paths
     if not args.generated.exists():
         raise FileNotFoundError(f"Generated samples not found: {args.generated}")
     if not args.original_data.exists():
         raise FileNotFoundError(f"Original data not found: {args.original_data}")
+
+    # Infer split paths if not provided
+    if args.train_split is None:
+        args.train_split = infer_split_path(args.original_data, "train")
+    if args.test_split is None:
+        args.test_split = infer_split_path(args.original_data, "test")
+
+    # Validate split paths
     if not args.train_split.exists():
         raise FileNotFoundError(f"Train split not found: {args.train_split}")
     if not args.test_split.exists():
