@@ -37,6 +37,7 @@ Phylogenetic trees are represented as graphs:
 
 ## References
 
+```
 @inproceedings{
 vignac2023digress,
 title={DiGress: Discrete Denoising diffusion for graph generation},
@@ -45,7 +46,9 @@ booktitle={The Eleventh International Conference on Learning Representations },
 year={2023},
 url={https://openreview.net/forum?id=UaAD-Nu86WX}
 }
+```
 
+```
 @article{Weiner2025SISTEMSO,
   title={SISTEM: simulation of tumor evolution, metastasis, and DNA-seq data under genotype-driven selection},
   author={Samson Weiner and Mukul S. Bansal},
@@ -54,3 +57,4 @@ url={https://openreview.net/forum?id=UaAD-Nu86WX}
   volume={41},
   url={https://api.semanticscholar.org/CorpusID:283240234}
 }
+```
