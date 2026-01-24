@@ -49,12 +49,18 @@ url={https://openreview.net/forum?id=UaAD-Nu86WX}
 ```
 
 ```
-@article{Weiner2025SISTEMSO,
-  title={SISTEM: simulation of tumor evolution, metastasis, and DNA-seq data under genotype-driven selection},
-  author={Samson Weiner and Mukul S. Bansal},
-  journal={Bioinformatics},
-  year={2025},
-  volume={41},
-  url={https://api.semanticscholar.org/CorpusID:283240234}
+@article{10.1093/bioinformatics/btaf634,
+    author = {Weiner, Samson and Bansal, Mukul S},
+    title = {SISTEM: simulation of tumor evolution, metastasis, and DNA-seq data under genotype-driven selection},
+    journal = {Bioinformatics},
+    volume = {41},
+    number = {12},
+    pages = {btaf634},
+    year = {2025},
+    month = {11},
+    issn = {1367-4811},
+    doi = {10.1093/bioinformatics/btaf634},
+    url = {https://doi.org/10.1093/bioinformatics/btaf634},
+    eprint = {https://academic.oup.com/bioinformatics/article-pdf/41/12/btaf634/65484128/btaf634.pdf},
 }
 ```
