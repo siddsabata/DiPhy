@@ -1,0 +1,22 @@
+{
+  "wasserstein_clone_fraction": 0.02648004411484636,
+  "wasserstein_clone_depth": 0.2169856915739268,
+  "wasserstein_clone_leaves": 0.48746104928457784,
+  "wasserstein_avg_mutations": 1.082213260267717,
+  "gen_validity_overall_pct": 97.5,
+  "gen_no_cycle_pct": 98.5,
+  "gen_root_degree_pct": 99.2,
+  "gen_clone_edge_types_pct": 99.4,
+  "gen_mutation_edge_types_pct": 99.8,
+  "test_validity_overall_pct": 100.0,
+  "test_no_cycle_pct": 100.0,
+  "test_root_degree_pct": 100.0,
+  "test_clone_edge_types_pct": 100.0,
+  "test_mutation_edge_types_pct": 100.0,
+  "mmd_ratio": Infinity,
+  "mmd_gen_test": 0.011662687490900936,
+  "mmd_train_test": 0.0,
+  "num_generated": 1000,
+  "num_train": 10065,
+  "num_test": 1258
+}

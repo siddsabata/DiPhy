@@ -1,0 +1,9 @@
+{
+  "wasserstein_clone_fraction": 0.08410190899830963,
+  "wasserstein_clone_depth": 0.9477142857142858,
+  "wasserstein_clone_leaves": 2.1820000000000004,
+  "wasserstein_avg_mutations": 15.67732467113892,
+  "mmd_gen_ref": 0.10808719460432448,
+  "num_generated": 1000,
+  "num_reference": 700
+}
