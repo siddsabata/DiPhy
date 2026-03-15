@@ -14,8 +14,11 @@ dependencies = [
     "omegaconf>=2.3.0",
     "pandas>=2.3.3",
     "pytorch-lightning>=2.6.0",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.17.0",
     "torch>=2.9.1",
     "torch-geometric>=2.7.0",
     "torchmetrics>=1.8.2",
+    "umap-learn>=0.5.11",
     "wandb>=0.23.1",
 ]

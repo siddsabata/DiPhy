@@ -4,3 +4,9 @@ __pycache__/
 CLAUDE.md
 model/data
 AGENTS.md
+
+figures/
+paper/
+draft.pdf
+data/.DS_Store
+data/test.ipynb
