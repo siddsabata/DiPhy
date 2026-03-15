@@ -1,0 +1,751 @@
+{
+  "ablations": {
+    "data_small_model_small": {
+      "run_info": {
+        "name": "data_small_model_small",
+        "model_size": "small",
+        "model_params": "8.2M",
+        "data_size": "small",
+        "data_fraction": "30%",
+        "data_path": "model/data/data_30.pkl"
+      },
+      "hyperparameters": {
+        "n_layers": 9,
+        "batch_size": 27,
+        "n_epochs": 500,
+        "lr": 0.0002,
+        "diffusion_steps": 1000,
+        "optimizer": "adamw",
+        "weight_decay": 1e-12,
+        "hidden_dims": {
+          "dx": 256,
+          "de": 64,
+          "dy": 64,
+          "n_head": 8,
+          "dim_ffX": 256,
+          "dim_ffE": 128,
+          "dim_ffy": 256
+        },
+        "hidden_mlp_dims": {
+          "X": 256,
+          "E": 128,
+          "y": 128
+        }
+      },
+      "training_info": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "best_val_loss": 195.12,
+        "best_val_epoch": 349,
+        "final_val_loss": 216.09
+      },
+      "validation_history": {
+        "epoch_0": {"val_nll": 4615.86, "val_X_kl": 31.77, "val_E_kl": 2218.64},
+        "epoch_49": {"val_nll": 212.42, "val_X_kl": 6.26, "val_E_kl": 201.27},
+        "epoch_99": {"val_nll": 217.09, "val_X_kl": 6.19, "val_E_kl": 206.10},
+        "epoch_149": {"val_nll": 226.12, "val_X_kl": 7.33, "val_E_kl": 214.02},
+        "epoch_199": {"val_nll": 207.31, "val_X_kl": 5.75, "val_E_kl": 196.81},
+        "epoch_249": {"val_nll": 253.00, "val_X_kl": 8.24, "val_E_kl": 240.02},
+        "epoch_299": {"val_nll": 227.85, "val_X_kl": 5.19, "val_E_kl": 217.95},
+        "epoch_349": {"val_nll": 195.12, "val_X_kl": 5.29, "val_E_kl": 185.10},
+        "epoch_399": {"val_nll": 223.98, "val_X_kl": 6.22, "val_E_kl": 213.05},
+        "epoch_449": {"val_nll": 226.52, "val_X_kl": 6.18, "val_E_kl": 215.63},
+        "epoch_499": {"val_nll": 216.09, "val_X_kl": 6.11, "val_E_kl": 205.27}
+      },
+      "eval_results": {
+        "wasserstein_metrics": {
+          "clone_fraction": 0.03314831644144646,
+          "clone_depth": 0.10889417989417992,
+          "clone_leaves": 0.17891005291005285,
+          "avg_mutations": 5.806084454462955
+        },
+        "validity_metrics": {
+          "gen_validity_overall_pct": 94.3,
+          "gen_no_cycle_pct": 96.0,
+          "gen_root_degree_pct": 97.6,
+          "gen_clone_edge_types_pct": 99.5,
+          "gen_mutation_edge_types_pct": 99.7,
+          "test_validity_overall_pct": 100.0,
+          "test_no_cycle_pct": 100.0,
+          "test_root_degree_pct": 100.0,
+          "test_clone_edge_types_pct": 100.0,
+          "test_mutation_edge_types_pct": 100.0
+        },
+        "mmd_metrics": {
+          "mmd_ratio": 27.749214910110865,
+          "mmd_gen_test": 0.017585361910997355,
+          "mmd_train_test": 0.0006337246645702344
+        },
+        "sample_counts": {
+          "num_generated": 1000,
+          "num_train": 3019,
+          "num_test": 378
+        }
+      }
+    },
+    "data_small_model_medium": {
+      "run_info": {
+        "name": "data_small_model_medium",
+        "model_size": "medium",
+        "model_params": "16.2M",
+        "data_size": "small",
+        "data_fraction": "30%",
+        "data_path": "model/data/data_30.pkl"
+      },
+      "hyperparameters": {
+        "n_layers": 18,
+        "batch_size": 14,
+        "n_epochs": 500,
+        "lr": 0.0002,
+        "diffusion_steps": 1000,
+        "optimizer": "adamw",
+        "weight_decay": 1e-12,
+        "hidden_dims": {
+          "dx": 256,
+          "de": 64,
+          "dy": 64,
+          "n_head": 8,
+          "dim_ffX": 256,
+          "dim_ffE": 128,
+          "dim_ffy": 256
+        },
+        "hidden_mlp_dims": {
+          "X": 256,
+          "E": 128,
+          "y": 128
+        }
+      },
+      "training_info": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "best_val_loss": 218.15,
+        "best_val_epoch": 349,
+        "final_val_loss": 6002.49,
+        "notes": "Training diverged after epoch 478 - final validation loss unreliable"
+      },
+      "validation_history": {
+        "epoch_0": {"val_nll": 2846.47, "val_X_kl": 25.42, "val_E_kl": 1526.47},
+        "epoch_49": {"val_nll": 233.93, "val_X_kl": 6.63, "val_E_kl": 222.48},
+        "epoch_99": {"val_nll": 228.27, "val_X_kl": 6.11, "val_E_kl": 217.39},
+        "epoch_149": {"val_nll": 258.71, "val_X_kl": 6.84, "val_E_kl": 247.12},
+        "epoch_199": {"val_nll": 238.01, "val_X_kl": 5.71, "val_E_kl": 227.55},
+        "epoch_249": {"val_nll": 232.46, "val_X_kl": 6.65, "val_E_kl": 221.02},
+        "epoch_299": {"val_nll": 221.01, "val_X_kl": 6.00, "val_E_kl": 210.28},
+        "epoch_349": {"val_nll": 218.15, "val_X_kl": 6.36, "val_E_kl": 207.05},
+        "epoch_399": {"val_nll": 249.97, "val_X_kl": 6.40, "val_E_kl": 238.81},
+        "epoch_449": {"val_nll": 222.07, "val_X_kl": 6.32, "val_E_kl": 211.04},
+        "epoch_499": {"val_nll": 6002.49, "val_X_kl": 33.90, "val_E_kl": 3183.34, "diverged": true}
+      },
+      "eval_results": {
+        "wasserstein_metrics": {
+          "clone_fraction": 0.040316115990055405,
+          "clone_depth": 0.2504920634920633,
+          "clone_leaves": 0.733941798941799,
+          "avg_mutations": 3.4157550425040486
+        },
+        "validity_metrics": {
+          "gen_validity_overall_pct": 92.6,
+          "gen_no_cycle_pct": 95.8,
+          "gen_root_degree_pct": 96.0,
+          "gen_clone_edge_types_pct": 99.3,
+          "gen_mutation_edge_types_pct": 99.6,
+          "test_validity_overall_pct": 100.0,
+          "test_no_cycle_pct": 100.0,
+          "test_root_degree_pct": 100.0,
+          "test_clone_edge_types_pct": 100.0,
+          "test_mutation_edge_types_pct": 100.0
+        },
+        "mmd_metrics": {
+          "mmd_ratio": 39.36600226363578,
+          "mmd_gen_test": 0.023649329020706045,
+          "mmd_train_test": 0.0006007551608193662
+        },
+        "sample_counts": {
+          "num_generated": 1000,
+          "num_train": 3019,
+          "num_test": 378
+        }
+      }
+    },
+    "data_medium_model_small": {
+      "run_info": {
+        "name": "data_medium_model_small",
+        "model_size": "small",
+        "model_params": "8.2M",
+        "data_size": "medium",
+        "data_fraction": "60%",
+        "data_path": "model/data/data_60.pkl"
+      },
+      "hyperparameters": {
+        "n_layers": 9,
+        "batch_size": 27,
+        "n_epochs": 500,
+        "lr": 0.0002,
+        "diffusion_steps": 1000,
+        "optimizer": "adamw",
+        "weight_decay": 1e-12,
+        "hidden_dims": {
+          "dx": 256,
+          "de": 64,
+          "dy": 64,
+          "n_head": 8,
+          "dim_ffX": 256,
+          "dim_ffE": 128,
+          "dim_ffy": 256
+        },
+        "hidden_mlp_dims": {
+          "X": 256,
+          "E": 128,
+          "y": 128
+        }
+      },
+      "training_info": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "best_val_loss": 167.80,
+        "best_val_epoch": 449,
+        "final_val_loss": 179.64,
+        "notes": "OOM error at epoch 300, training resumed from checkpoint and completed successfully"
+      },
+      "validation_history": {
+        "epoch_0": {"val_nll": 2518.49, "val_X_kl": 25.21, "val_E_kl": 1398.29},
+        "epoch_49": {"val_nll": 181.34, "val_X_kl": 5.52, "val_E_kl": 171.15},
+        "epoch_99": {"val_nll": 201.19, "val_X_kl": 5.67, "val_E_kl": 190.87},
+        "epoch_149": {"val_nll": 178.70, "val_X_kl": 5.00, "val_E_kl": 169.04},
+        "epoch_199": {"val_nll": 195.02, "val_X_kl": 5.96, "val_E_kl": 184.43},
+        "epoch_249": {"val_nll": 187.37, "val_X_kl": 5.42, "val_E_kl": 177.32},
+        "epoch_299": {"val_nll": 193.37, "val_X_kl": 5.68, "val_E_kl": 183.07},
+        "epoch_349": {"val_nll": 185.13, "val_X_kl": 5.30, "val_E_kl": 175.22},
+        "epoch_399": {"val_nll": 187.35, "val_X_kl": 5.49, "val_E_kl": 177.26},
+        "epoch_449": {"val_nll": 167.80, "val_X_kl": 5.17, "val_E_kl": 158.02},
+        "epoch_499": {"val_nll": 179.64, "val_X_kl": 5.47, "val_E_kl": 169.57}
+      },
+      "eval_results": {
+        "wasserstein_metrics": {
+          "clone_fraction": 0.028119684466719374,
+          "clone_depth": 0.10180794701986773,
+          "clone_leaves": 0.19592052980132418,
+          "avg_mutations": 2.1496219813569795
+        },
+        "validity_metrics": {
+          "gen_validity_overall_pct": 94.2,
+          "gen_no_cycle_pct": 94.8,
+          "gen_root_degree_pct": 97.1,
+          "gen_clone_edge_types_pct": 99.9,
+          "gen_mutation_edge_types_pct": 99.7,
+          "test_validity_overall_pct": 100.0,
+          "test_no_cycle_pct": 100.0,
+          "test_root_degree_pct": 100.0,
+          "test_clone_edge_types_pct": 100.0,
+          "test_mutation_edge_types_pct": 100.0
+        },
+        "mmd_metrics": {
+          "mmd_ratio": "Infinity",
+          "mmd_gen_test": 0.008142491036144506,
+          "mmd_train_test": 0.0
+        },
+        "sample_counts": {
+          "num_generated": 1000,
+          "num_train": 6039,
+          "num_test": 755
+        }
+      }
+    },
+    "data_medium_model_medium": {
+      "run_info": {
+        "name": "data_medium_model_medium",
+        "model_size": "medium",
+        "model_params": "16.2M",
+        "data_size": "medium",
+        "data_fraction": "60%",
+        "data_path": "model/data/data_60.pkl"
+      },
+      "hyperparameters": {
+        "n_layers": 18,
+        "batch_size": 14,
+        "n_epochs": 500,
+        "lr": 0.0002,
+        "diffusion_steps": 1000,
+        "optimizer": "adamw",
+        "weight_decay": 1e-12,
+        "hidden_dims": {
+          "dx": 256,
+          "de": 64,
+          "dy": 64,
+          "n_head": 8,
+          "dim_ffX": 256,
+          "dim_ffE": 128,
+          "dim_ffy": 256
+        },
+        "hidden_mlp_dims": {
+          "X": 256,
+          "E": 128,
+          "y": 128
+        }
+      },
+      "training_info": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "best_val_loss": 164.56,
+        "best_val_epoch": 349,
+        "final_val_loss": 178.06
+      },
+      "validation_history": {
+        "epoch_0": {"val_nll": 1726.97, "val_X_kl": 30.15, "val_E_kl": 1083.08},
+        "epoch_49": {"val_nll": 180.59, "val_X_kl": 5.61, "val_E_kl": 170.31},
+        "epoch_99": {"val_nll": 223.53, "val_X_kl": 6.92, "val_E_kl": 211.96},
+        "epoch_149": {"val_nll": 194.66, "val_X_kl": 5.58, "val_E_kl": 184.45},
+        "epoch_199": {"val_nll": 174.18, "val_X_kl": 4.93, "val_E_kl": 164.64},
+        "epoch_249": {"val_nll": 172.02, "val_X_kl": 5.99, "val_E_kl": 161.43},
+        "epoch_299": {"val_nll": 179.97, "val_X_kl": 5.46, "val_E_kl": 169.89},
+        "epoch_349": {"val_nll": 164.56, "val_X_kl": 4.84, "val_E_kl": 155.09},
+        "epoch_399": {"val_nll": 206.45, "val_X_kl": 6.16, "val_E_kl": 195.68},
+        "epoch_449": {"val_nll": 183.18, "val_X_kl": 5.25, "val_E_kl": 173.31},
+        "epoch_499": {"val_nll": 178.06, "val_X_kl": 5.48, "val_E_kl": 167.97}
+      },
+      "eval_results": {
+        "wasserstein_metrics": {
+          "clone_fraction": 0.006426563073167501,
+          "clone_depth": 0.16576821192052998,
+          "clone_leaves": 0.43235761589404,
+          "avg_mutations": 1.1907085627722083
+        },
+        "validity_metrics": {
+          "gen_validity_overall_pct": 96.5,
+          "gen_no_cycle_pct": 97.6,
+          "gen_root_degree_pct": 98.2,
+          "gen_clone_edge_types_pct": 100.0,
+          "gen_mutation_edge_types_pct": 99.9,
+          "test_validity_overall_pct": 100.0,
+          "test_no_cycle_pct": 100.0,
+          "test_root_degree_pct": 100.0,
+          "test_clone_edge_types_pct": 100.0,
+          "test_mutation_edge_types_pct": 100.0
+        },
+        "mmd_metrics": {
+          "mmd_ratio": "Infinity",
+          "mmd_gen_test": 0.000987131376926964,
+          "mmd_train_test": 0.0
+        },
+        "sample_counts": {
+          "num_generated": 1000,
+          "num_train": 6039,
+          "num_test": 755
+        }
+      }
+    },
+    "data_large_model_medium": {
+      "run_info": {
+        "name": "data_large_model_medium",
+        "model_size": "medium",
+        "model_params": "16.2M",
+        "data_size": "large",
+        "data_fraction": "100%",
+        "data_path": "model/data/data_100.pkl"
+      },
+      "hyperparameters": {
+        "n_layers": 18,
+        "batch_size": 14,
+        "n_epochs": 500,
+        "lr": 0.0002,
+        "diffusion_steps": 1000,
+        "optimizer": "adamw",
+        "weight_decay": 1e-12,
+        "hidden_dims": {
+          "dx": 256,
+          "de": 64,
+          "dy": 64,
+          "n_head": 8,
+          "dim_ffX": 256,
+          "dim_ffE": 128,
+          "dim_ffy": 256
+        },
+        "hidden_mlp_dims": {
+          "X": 256,
+          "E": 128,
+          "y": 128
+        }
+      },
+      "training_info": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "best_val_loss": 189.64,
+        "best_val_epoch": 349,
+        "final_val_loss": 198.34
+      },
+      "validation_history": {
+        "epoch_0": {"val_nll": 4875.07, "val_X_kl": 46.31, "val_E_kl": 2775.14},
+        "epoch_49": {"val_nll": 209.07, "val_X_kl": 6.28, "val_E_kl": 198.15},
+        "epoch_99": {"val_nll": 202.37, "val_X_kl": 6.02, "val_E_kl": 191.72},
+        "epoch_149": {"val_nll": 193.96, "val_X_kl": 5.93, "val_E_kl": 183.40},
+        "epoch_199": {"val_nll": 211.52, "val_X_kl": 6.28, "val_E_kl": 200.63},
+        "epoch_249": {"val_nll": 192.35, "val_X_kl": 5.70, "val_E_kl": 182.05},
+        "epoch_299": {"val_nll": 192.40, "val_X_kl": 5.57, "val_E_kl": 182.23},
+        "epoch_349": {"val_nll": 189.64, "val_X_kl": 5.24, "val_E_kl": 179.78},
+        "epoch_399": {"val_nll": 194.54, "val_X_kl": 6.21, "val_E_kl": 183.72},
+        "epoch_449": {"val_nll": 201.06, "val_X_kl": 5.96, "val_E_kl": 190.50},
+        "epoch_499": {"val_nll": 198.34, "val_X_kl": 6.07, "val_E_kl": 187.66}
+      },
+      "eval_results": {
+        "wasserstein_metrics": {
+          "clone_fraction": 0.02648004411484636,
+          "clone_depth": 0.2169856915739268,
+          "clone_leaves": 0.48746104928457784,
+          "avg_mutations": 1.082213260267717
+        },
+        "validity_metrics": {
+          "gen_validity_overall_pct": 97.5,
+          "gen_no_cycle_pct": 98.5,
+          "gen_root_degree_pct": 99.2,
+          "gen_clone_edge_types_pct": 99.4,
+          "gen_mutation_edge_types_pct": 99.8,
+          "test_validity_overall_pct": 100.0,
+          "test_no_cycle_pct": 100.0,
+          "test_root_degree_pct": 100.0,
+          "test_clone_edge_types_pct": 100.0,
+          "test_mutation_edge_types_pct": 100.0
+        },
+        "mmd_metrics": {
+          "mmd_ratio": "Infinity",
+          "mmd_gen_test": 0.011662687490900936,
+          "mmd_train_test": 0.0
+        },
+        "sample_counts": {
+          "num_generated": 1000,
+          "num_train": 10065,
+          "num_test": 1258
+        }
+      }
+    },
+    "data_small_model_large": {
+      "run_info": {
+        "name": "data_small_model_large",
+        "model_size": "large",
+        "model_params": "32.1M",
+        "data_size": "small",
+        "data_fraction": "30%",
+        "data_path": "model/data/data_30.pkl"
+      },
+      "hyperparameters": {
+        "n_layers": 36,
+        "batch_size": 6,
+        "n_epochs": 500,
+        "lr": 0.0002,
+        "diffusion_steps": 1000,
+        "optimizer": "adamw",
+        "weight_decay": 1e-12,
+        "hidden_dims": {
+          "dx": 256,
+          "de": 64,
+          "dy": 64,
+          "n_head": 8,
+          "dim_ffX": 256,
+          "dim_ffE": 128,
+          "dim_ffy": 256
+        },
+        "hidden_mlp_dims": {
+          "X": 256,
+          "E": 128,
+          "y": 128
+        }
+      },
+      "training_info": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "best_val_loss": 758.96,
+        "best_val_epoch": 0,
+        "final_val_loss": 5931.31,
+        "notes": "Training diverged immediately - best val loss at epoch 0, never recovered. Large model severely overfit on small data.",
+        "diverged": true
+      },
+      "validation_history": {
+        "epoch_0": {"val_nll": 758.96, "val_X_kl": 25.27, "val_E_kl": 346.95},
+        "epoch_49": {"val_nll": 8497.57, "val_X_kl": 62.41, "val_E_kl": 4530.96, "diverged": true},
+        "epoch_99": {"val_nll": 7074.35, "val_X_kl": 46.64, "val_E_kl": 3550.57, "diverged": true},
+        "epoch_149": {"val_nll": 7745.87, "val_X_kl": 59.39, "val_E_kl": 3969.05, "diverged": true},
+        "epoch_199": {"val_nll": 5725.48, "val_X_kl": 49.62, "val_E_kl": 2928.10, "diverged": true},
+        "epoch_249": {"val_nll": 4822.62, "val_X_kl": 44.43, "val_E_kl": 2490.40, "diverged": true},
+        "epoch_299": {"val_nll": 6435.79, "val_X_kl": 47.55, "val_E_kl": 3383.89, "diverged": true},
+        "epoch_349": {"val_nll": 5698.26, "val_X_kl": 43.44, "val_E_kl": 2859.23, "diverged": true},
+        "epoch_399": {"val_nll": 7143.71, "val_X_kl": 48.38, "val_E_kl": 3836.46, "diverged": true},
+        "epoch_449": {"val_nll": 5750.49, "val_X_kl": 47.14, "val_E_kl": 3068.01, "diverged": true},
+        "epoch_499": {"val_nll": 5931.31, "val_X_kl": 40.26, "val_E_kl": 2983.99, "diverged": true}
+      },
+      "eval_results": {
+        "wasserstein_metrics": {
+          "clone_fraction": 0.2074230116459206,
+          "clone_depth": 1.908798941798942,
+          "clone_leaves": 2.646804232804233,
+          "avg_mutations": 10.76251822107956
+        },
+        "validity_metrics": {
+          "gen_validity_overall_pct": 0.2,
+          "gen_no_cycle_pct": 12.4,
+          "gen_root_degree_pct": 1.5,
+          "gen_clone_edge_types_pct": 8.0,
+          "gen_mutation_edge_types_pct": 0.9,
+          "test_validity_overall_pct": 100.0,
+          "test_no_cycle_pct": 100.0,
+          "test_root_degree_pct": 100.0,
+          "test_clone_edge_types_pct": 100.0,
+          "test_mutation_edge_types_pct": 100.0
+        },
+        "mmd_metrics": {
+          "mmd_ratio": 1862.483611945566,
+          "mmd_gen_test": 0.5940661180762369,
+          "mmd_train_test": 0.0003189644806891323
+        },
+        "sample_counts": {
+          "num_generated": 1000,
+          "num_train": 3019,
+          "num_test": 378
+        }
+      }
+    },
+    "data_large_model_large": {
+      "run_info": {
+        "name": "data_large_model_large",
+        "model_size": "large",
+        "model_params": "32.1M",
+        "data_size": "large",
+        "data_fraction": "100%",
+        "data_path": "model/data/data_100.pkl"
+      },
+      "hyperparameters": {
+        "n_layers": 36,
+        "batch_size": 6,
+        "n_epochs": 500,
+        "lr": 0.0002,
+        "diffusion_steps": 1000,
+        "optimizer": "adamw",
+        "weight_decay": 1e-12,
+        "hidden_dims": {
+          "dx": 256,
+          "de": 64,
+          "dy": 64,
+          "n_head": 8,
+          "dim_ffX": 256,
+          "dim_ffE": 128,
+          "dim_ffy": 256
+        },
+        "hidden_mlp_dims": {
+          "X": 256,
+          "E": 128,
+          "y": 128
+        }
+      },
+      "training_info": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "best_val_loss": 3596.46,
+        "best_val_epoch": 149,
+        "final_val_loss": 6091.75,
+        "notes": "Training regressed significantly after epoch 149. Loss nearly doubled by end of training. Large model (36 layers) failed to learn stable distribution even with full dataset.",
+        "diverged": true
+      },
+      "validation_history": {
+        "epoch_0": {"val_nll": 6799.73, "val_X_kl": 58.65, "val_E_kl": 2978.68},
+        "epoch_49": {"val_nll": 5064.11, "val_X_kl": 45.58, "val_E_kl": 2661.81},
+        "epoch_99": {"val_nll": 4230.32, "val_X_kl": 38.84, "val_E_kl": 2293.00},
+        "epoch_149": {"val_nll": 3596.46, "val_X_kl": 42.68, "val_E_kl": 1936.36},
+        "epoch_199": {"val_nll": 3969.18, "val_X_kl": 39.69, "val_E_kl": 2179.55, "diverged": true},
+        "epoch_249": {"val_nll": 4507.86, "val_X_kl": 44.90, "val_E_kl": 2477.65, "diverged": true},
+        "epoch_299": {"val_nll": 4471.07, "val_X_kl": 43.05, "val_E_kl": 2385.84, "diverged": true},
+        "epoch_349": {"val_nll": 4671.57, "val_X_kl": 44.96, "val_E_kl": 2391.43, "diverged": true},
+        "epoch_399": {"val_nll": 4997.19, "val_X_kl": 49.39, "val_E_kl": 2644.16, "diverged": true},
+        "epoch_449": {"val_nll": 6589.02, "val_X_kl": 43.45, "val_E_kl": 3392.52, "diverged": true},
+        "epoch_499": {"val_nll": 6091.75, "val_X_kl": 45.11, "val_E_kl": 3241.20, "diverged": true}
+      },
+      "eval_results": {
+        "wasserstein_metrics": {
+          "clone_fraction": 0.36577493055649035,
+          "clone_depth": 1.898410174880763,
+          "clone_leaves": 2.753427662957074,
+          "avg_mutations": 3.0096228080217133
+        },
+        "validity_metrics": {
+          "gen_validity_overall_pct": 0.0,
+          "gen_no_cycle_pct": 3.0,
+          "gen_root_degree_pct": 1.0,
+          "gen_clone_edge_types_pct": 16.1,
+          "gen_mutation_edge_types_pct": 2.8,
+          "test_validity_overall_pct": 100.0,
+          "test_no_cycle_pct": 100.0,
+          "test_root_degree_pct": 100.0,
+          "test_clone_edge_types_pct": 100.0,
+          "test_mutation_edge_types_pct": 100.0
+        },
+        "mmd_metrics": {
+          "mmd_ratio": "Infinity",
+          "mmd_gen_test": 0.7049375467576595,
+          "mmd_train_test": 0.0
+        },
+        "sample_counts": {
+          "num_generated": 1000,
+          "num_train": 10065,
+          "num_test": 1258
+        }
+      }
+    },
+    "data_medium_model_large": {
+      "run_info": {
+        "name": "data_medium_model_large",
+        "model_size": "large",
+        "model_params": "32.1M",
+        "data_size": "medium",
+        "data_fraction": "60%",
+        "data_path": "model/data/data_60.pkl"
+      },
+      "hyperparameters": {
+        "n_layers": 36,
+        "batch_size": 6,
+        "n_epochs": 500,
+        "lr": 0.0002,
+        "diffusion_steps": 1000,
+        "optimizer": "adamw",
+        "weight_decay": 1e-12,
+        "hidden_dims": {
+          "dx": 256,
+          "de": 64,
+          "dy": 64,
+          "n_head": 8,
+          "dim_ffX": 256,
+          "dim_ffE": 128,
+          "dim_ffy": 256
+        },
+        "hidden_mlp_dims": {
+          "X": 256,
+          "E": 128,
+          "y": 128
+        }
+      },
+      "training_info": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "best_val_loss": 274.30,
+        "best_val_epoch": 0,
+        "final_val_loss": 3818.60,
+        "notes": "Training diverged immediately after epoch 0 - best val loss at epoch 0, never recovered. Large model (36 layers) failed to learn even with medium dataset.",
+        "diverged": true
+      },
+      "validation_history": {
+        "epoch_0": {"val_nll": 274.30, "val_X_kl": 17.76, "val_E_kl": 130.68},
+        "epoch_49": {"val_nll": 4229.96, "val_X_kl": 41.39, "val_E_kl": 2360.25, "diverged": true},
+        "epoch_99": {"val_nll": 6539.48, "val_X_kl": 43.13, "val_E_kl": 3357.54, "diverged": true},
+        "epoch_149": {"val_nll": 5512.46, "val_X_kl": 48.01, "val_E_kl": 2457.33, "diverged": true},
+        "epoch_199": {"val_nll": 5484.55, "val_X_kl": 48.68, "val_E_kl": 2872.20, "diverged": true},
+        "epoch_249": {"val_nll": 7683.32, "val_X_kl": 38.63, "val_E_kl": 4051.91, "diverged": true},
+        "epoch_299": {"val_nll": 4679.37, "val_X_kl": 34.73, "val_E_kl": 2402.75, "diverged": true},
+        "epoch_349": {"val_nll": 4636.90, "val_X_kl": 39.40, "val_E_kl": 2295.02, "diverged": true},
+        "epoch_399": {"val_nll": 5479.14, "val_X_kl": 49.23, "val_E_kl": 2902.23, "diverged": true},
+        "epoch_449": {"val_nll": 4222.87, "val_X_kl": 50.34, "val_E_kl": 2217.55, "diverged": true},
+        "epoch_499": {"val_nll": 3818.60, "val_X_kl": 40.76, "val_E_kl": 2072.69, "diverged": true}
+      },
+      "eval_results": {
+        "wasserstein_metrics": {
+          "clone_fraction": 0.419835102467042,
+          "clone_depth": 1.8498675496688743,
+          "clone_leaves": 2.65435761589404,
+          "avg_mutations": 4.672391509280389
+        },
+        "validity_metrics": {
+          "gen_validity_overall_pct": 0.1,
+          "gen_no_cycle_pct": 6.3,
+          "gen_root_degree_pct": 2.2,
+          "gen_clone_edge_types_pct": 12.9,
+          "gen_mutation_edge_types_pct": 1.4,
+          "test_validity_overall_pct": 100.0,
+          "test_no_cycle_pct": 100.0,
+          "test_root_degree_pct": 100.0,
+          "test_clone_edge_types_pct": 100.0,
+          "test_mutation_edge_types_pct": 100.0
+        },
+        "mmd_metrics": {
+          "mmd_ratio": "Infinity",
+          "mmd_gen_test": 0.82834828664217,
+          "mmd_train_test": 0.0
+        },
+        "sample_counts": {
+          "num_generated": 1000,
+          "num_train": 6039,
+          "num_test": 755
+        }
+      }
+    },
+    "data_large_model_small": {
+      "run_info": {
+        "name": "data_large_model_small",
+        "model_size": "small",
+        "model_params": "8.2M",
+        "data_size": "large",
+        "data_fraction": "100%",
+        "data_path": "model/data/data_100.pkl"
+      },
+      "hyperparameters": {
+        "n_layers": 9,
+        "batch_size": 27,
+        "n_epochs": 500,
+        "lr": 0.0002,
+        "diffusion_steps": 1000,
+        "optimizer": "adamw",
+        "weight_decay": 1e-12,
+        "hidden_dims": {
+          "dx": 256,
+          "de": 64,
+          "dy": 64,
+          "n_head": 8,
+          "dim_ffX": 256,
+          "dim_ffE": 128,
+          "dim_ffy": 256
+        },
+        "hidden_mlp_dims": {
+          "X": 256,
+          "E": 128,
+          "y": 128
+        }
+      },
+      "training_info": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "best_val_loss": 180.65,
+        "best_val_epoch": 49,
+        "final_val_loss": 195.13,
+        "notes": "OOM errors after epochs 149, 299, and 449 during training steps. Training resumed from checkpoints and completed successfully."
+      },
+      "validation_history": {
+        "epoch_0": {"val_nll": 5955.03, "val_X_kl": 29.59, "val_E_kl": 3195.00},
+        "epoch_49": {"val_nll": 180.65, "val_X_kl": 5.65, "val_E_kl": 170.35},
+        "epoch_99": {"val_nll": 188.13, "val_X_kl": 5.33, "val_E_kl": 178.18},
+        "epoch_149": {"val_nll": 190.63, "val_X_kl": 5.42, "val_E_kl": 180.60},
+        "epoch_199": {"val_nll": 194.42, "val_X_kl": 5.24, "val_E_kl": 184.57},
+        "epoch_249": {"val_nll": 193.05, "val_X_kl": 5.48, "val_E_kl": 182.95},
+        "epoch_299": {"val_nll": 186.06, "val_X_kl": 5.44, "val_E_kl": 176.00},
+        "epoch_349": {"val_nll": 184.72, "val_X_kl": 5.54, "val_E_kl": 174.57},
+        "epoch_399": {"val_nll": 197.37, "val_X_kl": 5.52, "val_E_kl": 187.25},
+        "epoch_449": {"val_nll": 184.81, "val_X_kl": 5.36, "val_E_kl": 174.85},
+        "epoch_499": {"val_nll": 195.13, "val_X_kl": 5.82, "val_E_kl": 184.69}
+      },
+      "eval_results": {
+        "wasserstein_metrics": {
+          "clone_fraction": 0.018266233278436433,
+          "clone_depth": 0.29341017488076293,
+          "clone_leaves": 0.5538346581875999,
+          "avg_mutations": 11.856768402978732
+        },
+        "validity_metrics": {
+          "gen_validity_overall_pct": 89.7,
+          "gen_no_cycle_pct": 92.5,
+          "gen_root_degree_pct": 95.6,
+          "gen_clone_edge_types_pct": 99.3,
+          "gen_mutation_edge_types_pct": 99.2,
+          "test_validity_overall_pct": 100.0,
+          "test_no_cycle_pct": 100.0,
+          "test_root_degree_pct": 100.0,
+          "test_clone_edge_types_pct": 100.0,
+          "test_mutation_edge_types_pct": 100.0
+        },
+        "mmd_metrics": {
+          "mmd_ratio": "Infinity",
+          "mmd_gen_test": 0.016250000632291428,
+          "mmd_train_test": 0.0
+        },
+        "sample_counts": {
+          "num_generated": 1000,
+          "num_train": 10065,
+          "num_test": 1258
+        }
+      }
+    }
+  }
+}
